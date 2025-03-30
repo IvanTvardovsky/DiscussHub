@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, TextField, Typography, Container, Box, Paper, Rating, Stack } from '@mui/material';
 
-const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessageHistory }) => {
+const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessageHistory, onUpdateRoomName }) => {
     const [messageInput, setMessageInput] = useState('');
     const [isDiscussionActive, setIsDiscussionActive] = useState(false);
     const [showRatingForm, setShowRatingForm] = useState(false);
     const [ratings, setRatings] = useState({ politeness: 0, argumentsQuality: 0 });
     const messagesEndRef = useRef(null);
-   // const [roomName, setRoomName] = useState('AwesomeChat');
 
     useEffect(() => {
         if (isDiscussionActive) {
@@ -18,7 +17,10 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
     }, [isDiscussionActive]);
 
     useEffect(() => {
+        if (!socket) return;
+
         const messageListener = (event) => {
+            console.log('MESSAGE IN CHAT COMPONENT:', event.data); // Добавим логирование
             const message = JSON.parse(event.data);
 
             switch(message.type) {
@@ -51,9 +53,10 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
                         username: 'system' // форматируем как системное
                     }]);
                     break;
-                case 'setRoomName':
-                    //onUpdateRoomName(message.content);
-                    break;
+                // case 'setRoomName':
+                //     console.log('Updating room name to:', message.content);
+                //     onUpdateRoomName(message.content);
+                //     break;
                 case 'usual':
                     setMessageHistory(prev => [...prev, message]);
                     break;
@@ -63,14 +66,16 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
         };
 
         socket.addEventListener('message', messageListener);
-        return () => socket.removeEventListener('message', messageListener);
-    }, []);
+        return () => {
+            socket.removeEventListener('message', messageListener);
+        };
+    }, [socket, onUpdateRoomName, setMessageHistory]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messageHistory]);
 
-    const sendMessage = () => {
+    const sendMessage = () => { console.log('MESSAGE IN CHAT COMPONENT:', event.data); // Добавим логирование
         const trimmed = messageInput.trim();
 
         if (!isDiscussionActive) {
@@ -203,6 +208,12 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
                     placeholder={isDiscussionActive ? "Ваше сообщение..." : "Напишите '+'"}
                     value={messageInput}
                     onChange={e => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                        }
+                    }}
                     disabled={showRatingForm}
                 />
                 <Button

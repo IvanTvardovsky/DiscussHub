@@ -30,23 +30,13 @@ func InformUserJoined(room *structures.Room, username string) {
 	sendToAll(room, msg)
 }
 
-func SetRoomName(ws *websocket.Conn, roomname string, roomNumber int) {
+func SetRoomName(room *structures.Room) {
 	msg := structures.Message{
-		Type:     "setRoomName",
-		Content:  "[Комната #" + strconv.Itoa(roomNumber) + "]    " + roomname,
-		Username: "default",
+		Type:    "setRoomName",
+		Content: "[Комната #" + strconv.Itoa(room.ID) + "]    " + room.Name,
 	}
 
-	messageToSend, err := json.Marshal(msg)
-	if err != nil {
-		logger.Log.Errorln(err)
-	}
-	logger.Log.Traceln("Sending:", string(messageToSend))
-
-	err = ws.WriteMessage(websocket.TextMessage, messageToSend)
-	if err != nil {
-		logger.Log.Errorln(err)
-	}
+	sendToAll(room, msg)
 }
 
 //func SendSystemMessage(room *structures.Room, content string) {

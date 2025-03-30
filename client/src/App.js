@@ -44,7 +44,7 @@ const App = () => {
     const [currentView, setCurrentView] = useState('login');
     const [socket, setSocket] = useState(null);
     const [messageHistory, setMessageHistory] = useState([]);
-    const [roomName, setRoomName] = useState('AwesomeChat');
+    const [roomName, setRoomName] = useState('Комната');
     const [error, setError] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -123,6 +123,16 @@ const App = () => {
 
     const connectToWebSocket = (url, onSuccess) => {
         const newSocket = new WebSocket(url);
+
+        newSocket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type === 'setRoomName') {
+                setRoomName(message.content);
+            }
+        };
+
+        setSocket(newSocket);
+
         newSocket.onopen = () => {
             console.log('Successfully connected to chat room');
             onSuccess();
@@ -135,8 +145,6 @@ const App = () => {
             console.log('Socket Error: ', error);
             setError('An error occurred while connecting to the chat room');
         };
-        // убрали обработчик onmessage
-        setSocket(newSocket);
     };
 
     const handleLeaveChat = () => {

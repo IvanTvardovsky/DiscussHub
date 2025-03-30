@@ -56,7 +56,7 @@ func ConnectToChatroom(c *gin.Context, rooms *map[int]*structures.Room) {
 	}
 
 	logger.Log.Traceln(fmt.Sprintf("Current amount of users in room %d: %d", chatNumber, len((*rooms)[chatNumber].Users)))
-	informing.SetRoomName(websocket, room.Name, room.ID)
+	informing.SetRoomName(room)
 	informing.InformUserJoined(room, username)
 	go myws.Reader(websocket, room, rooms)
 }
@@ -140,7 +140,7 @@ func CreateChatroom(c *gin.Context, rooms *map[int]*structures.Room) {
 	logger.Log.Traceln(currentUser.Name + " added to room")
 
 	logger.Log.Traceln(fmt.Sprintf("Current amount of users in room %d: %d", chatNumber, len((*rooms)[chatNumber].Users)))
-	informing.SetRoomName(websocket, room.Name, room.ID)
+	informing.SetRoomName(room)
 	informing.InformUserJoined(room, username)
 	go myws.Reader(websocket, room, rooms)
 }
