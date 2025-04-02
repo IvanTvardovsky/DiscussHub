@@ -72,75 +72,99 @@ func getRandomAvailableRoomNumber(rooms *map[int]*structures.Room, maxRooms int)
 }
 
 func CreateChatroom(c *gin.Context, rooms *map[int]*structures.Room) {
-	//todo вынести забор аргументов в функцию?
-	username := c.Query("username")
-	roomname := c.Query("roomname")
-	open, err := strconv.ParseBool(c.Query("open"))
-	if err != nil {
-		//todo
-	}
-	password := c.Query("password")
-	maxUsers, err := strconv.Atoi(c.Query("maxUsers"))
-	if err != nil {
-		//todo
-	}
-	if maxUsers <= 1 {
-		maxUsers = 2
-	}
-	subtopic := c.Query("subtopic")
-	subtopicID, err := strconv.Atoi(subtopic)
-	if err != nil {
-		//todo
-	}
-	topic := c.Query("topic")
-	topicID, err := strconv.Atoi(topic)
-	if err != nil {
-		//todo
+	var req struct {
+		Name            string   `json:"name"`
+		Mode            string   `json:"mode"`
+		SubType         string   `json:"subType"`
+		Timer           int      `json:"timer"`
+		MaxParticipants int      `json:"maxParticipants"`
+		Description     string   `json:"description"`
+		Password        string   `json:"password"`
+		Purpose         string   `json:"purpose"`
+		KeyQuestions    []string `json:"keyQuestions"`
+		Tags            []string `json:"tags"`
+		Hidden          bool     `json:"hidden"`
+		ExportOptions   []string `json:"exportOptions"`
+		DontJoin        bool     `json:"dontJoin"`
+		Topic           int      `json:"topic"`          // blitz
+		Subtopic        int      `json:"subtopic"`       // blitz
+		CustomTopic     string   `json:"customTopic"`    // free
+		CustomSubtopic  string   `json:"customSubtopic"` // free
+		Open            bool     `json:"open"`
+		CreatorName     string   `json:"creatorName"`
 	}
 
-	chatNumber := getRandomAvailableRoomNumber(rooms, maxRooms)
-
-	logger.Log.Traceln(fmt.Sprintf("%s wants to connect to room %d", username, chatNumber))
-
-	room, exists := (*rooms)[chatNumber]
-	if exists {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Room already exists"})
+	if err := c.BindJSON(&req); err != nil {
+		logger.Log.Errorf("Failed to bind request: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
-	if !open && password == "" {
+	logger.Log.Traceln(req)
+
+	if !req.Open && req.Password == "" {
+		logger.Log.Errorf("Failed to bind request: Password is empty")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is empty"})
 		return
 	}
 
-	websocket, err := web.UpgradeConnection(c)
-	if err != nil {
-		logger.Log.Errorln("Error upgrading connection:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upgrade connection"})
-		return
+	if req.MaxParticipants <= 1 {
+		req.MaxParticipants = 2
 	}
 
-	currentUser := structures.ChatUser{
-		Name:       username,
-		Connection: websocket,
+	chatNumber := getRandomAvailableRoomNumber(rooms, maxRooms)
+	//username := c.Query("username") // можно передавать имя пользователя как query-параметр
+
+	//websocket, err := web.UpgradeConnection(c)
+	//if err != nil {
+	//	logger.Log.Errorln("Error upgrading connection:", err)
+	//	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upgrade connection"})
+	//	return
+	//}
+
+	//currentUser := structures.ChatUser{
+	//	Name:       username,
+	//	Connection: websocket,
+	//}
+
+	room := &structures.Room{
+		ID:              chatNumber,
+		Name:            req.Name,
+		Open:            req.Open,
+		Password:        req.Password,
+		MaxUsers:        req.MaxParticipants,
+		Mode:            req.Mode,
+		SubType:         req.SubType,
+		Description:     req.Description,
+		Purpose:         req.Purpose,
+		KeyQuestions:    req.KeyQuestions,
+		Tags:            req.Tags,
+		Hidden:          req.Hidden,
+		ExportOptions:   req.ExportOptions,
+		DontJoin:        req.DontJoin,
+		Duration:        time.Duration(req.Timer) * time.Minute,
+		ReadyUsers:      make(map[string]bool),
+		AssignedTheses:  []string{},
+		UserTheses:      make(map[string]string),
+		CreatorUsername: req.CreatorName,
 	}
-	room = &structures.Room{
-		ID:         chatNumber,
-		Name:       roomname,
-		Open:       open,
-		Password:   password,
-		Users:      []*structures.ChatUser{&currentUser}, // сразу инициализация
-		MaxUsers:   maxUsers,
-		TopicID:    topicID,
-		SubtopicID: subtopicID,
-		ReadyUsers: make(map[string]bool),
+
+	if req.Mode == "personal" && req.SubType == "blitz" {
+		room.TopicID = req.Topic
+		room.SubtopicID = req.Subtopic
+	} else if req.Mode == "personal" && req.SubType == "free" {
+		room.CustomTopic = req.CustomTopic
+		room.CustomSubtopic = req.CustomSubtopic
 	}
+
 	(*rooms)[chatNumber] = room
 	logger.Log.Traceln("Created room №" + strconv.Itoa(chatNumber))
-	logger.Log.Traceln(currentUser.Name + " added to room")
+	logger.Log.Traceln("room: ", room)
+	//logger.Log.Traceln(currentUser.Name + " added to room")
 
-	logger.Log.Traceln(fmt.Sprintf("Current amount of users in room %d: %d", chatNumber, len((*rooms)[chatNumber].Users)))
-	informing.SetRoomName(room)
-	informing.InformUserJoined(room, username)
-	go myws.Reader(websocket, room, rooms)
+	//informing.SetRoomName(room)
+	//informing.InformUserJoined(room, username)
+	//go myws.Reader(websocket, room, rooms)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Room created", "roomID": chatNumber, "wsUrl": "/ws/chat/" + strconv.Itoa(room.ID)})
 }

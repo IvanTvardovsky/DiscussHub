@@ -61,10 +61,10 @@ func main() {
 	router.POST("/register", func(c *gin.Context) {
 		handlers.Register(c, db)
 	})
-	router.GET("/connectToChatroom/:num", AuthMiddleware(), func(c *gin.Context) {
+	router.GET("/ws/chat/:num", AuthMiddleware(), func(c *gin.Context) {
 		handlers.ConnectToChatroom(c, &rooms)
 	})
-	router.GET("/createChatroom/", AuthMiddleware(), func(c *gin.Context) {
+	router.POST("/createChatroom/", AuthMiddleware(), func(c *gin.Context) {
 		handlers.CreateChatroom(c, &rooms)
 	})
 	router.GET("/roomUpdates", func(c *gin.Context) {

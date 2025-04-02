@@ -14,9 +14,7 @@ import {
     DialogContentText,
     DialogActions,
     MenuItem,
-    Box,
-    Chip,
-    Divider
+    Box
 } from '@mui/material';
 
 const topics = [
@@ -92,12 +90,9 @@ const RoomList = ({ onJoinRoom }) => {
     const [filterSubtopic, setFilterSubtopic] = useState(0); // 0 – все субтопики
     const socketRef = useRef(null);
 
-    // состояния для диалога прямого входа по ID
     const [openDirectJoin, setOpenDirectJoin] = useState(false);
     const [directRoomId, setDirectRoomId] = useState('');
     const [directRoomPassword, setDirectRoomPassword] = useState('');
-
-    // состояния для диалога ввода пароля для закрытых комнат
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedRoomId, setSelectedRoomId] = useState(null);
     const [dialogPassword, setDialogPassword] = useState('');
@@ -171,7 +166,6 @@ const RoomList = ({ onJoinRoom }) => {
         }
     };
 
-    // обработка прямого входа по ID
     const handleDirectJoin = () => {
         if (directRoomId.trim() !== '') {
             onJoinRoom(directRoomId.trim(), directRoomPassword.trim());
@@ -181,8 +175,41 @@ const RoomList = ({ onJoinRoom }) => {
         }
     };
 
+    const renderRoomTopic = (room) => {
+        if (room.mode === 'personal') {
+            if (room.subType === 'blitz') {
+                return (
+                    <>
+                        <Typography color="textSecondary">
+                            Топик: {getTopicNameById(room.topic)}
+                        </Typography>
+                        <Typography color="textSecondary">
+                            Субтопик: {getSubtopicNameById(room.topic, room.subtopic)}
+                        </Typography>
+                    </>
+                );
+            } else if (room.subType === 'free') {
+                return (
+                    <Typography color="textSecondary">
+                        Тема: {room.customTopic}
+                        {room.customSubtopic && ` / ${room.customSubtopic}`}
+                    </Typography>
+                );
+            }
+        }
+
+        if (room.mode === 'professional') {
+            return (
+                <Typography color="textSecondary">
+                    Цель: {room.purpose}
+                </Typography>
+            );
+        }
+        return null;
+    };
+
     return (
-        <Container component="main" maxWidth="md">
+        <Container component="main" maxWidth="lg">
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h5" component="h2">
                     Доступные комнаты
@@ -191,13 +218,15 @@ const RoomList = ({ onJoinRoom }) => {
                     Войти по ID комнаты
                 </Button>
             </Box>
-            {/* фильтр комнат */}
+
+            {/* заготовка для фильтров */}
             <Box display="flex" gap={2} mb={2}>
                 <TextField
                     select
                     label="Топик"
                     value={filterTopic}
                     onChange={handleFilterTopicChange}
+                    size="small"
                 >
                     <MenuItem value={0}>Все топики</MenuItem>
                     {topics.map((topic) => (
@@ -211,6 +240,7 @@ const RoomList = ({ onJoinRoom }) => {
                     label="Субтопик"
                     value={filterSubtopic}
                     onChange={handleFilterSubtopicChange}
+                    size="small"
                     disabled={filterTopic === 0}
                 >
                     <MenuItem value={0}>Все субтопики</MenuItem>
@@ -223,28 +253,27 @@ const RoomList = ({ onJoinRoom }) => {
                 </TextField>
             </Box>
 
-            {/* сетка доступных комнат */}
+            {/* сетка карточек комнат */}
             <Grid container spacing={2}>
                 {availableRooms.map((room) => (
-                    <Grid item xs={12} sm={6} md={4} key={room.id}>
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={room.id}>
                         <Card variant="outlined">
                             <CardContent>
-                                <Typography variant="h5">{room.name}</Typography>
-                                <Typography color="textSecondary">
-                                    Room ID: {room.id}
+                                <Typography variant="h6" gutterBottom>
+                                    {room.name}
                                 </Typography>
-                                <Typography color="textSecondary">
-                                    {room.open ? 'Открытая' : 'Закрытая'}
+                                <Typography variant="caption" display="block">
+                                    ID: {room.id} — {room.open ? 'Открытая' : 'Закрытая'}
                                 </Typography>
-                                <Typography variant="body2">
-                                    Users: {room.users}/{room.maxUsers}
+                                <Typography variant="caption" display="block">
+                                    Пользователи: {room.users}/{room.maxUsers}
                                 </Typography>
-                                <Typography color="textSecondary">
-                                    Топик: {getTopicNameById(room.topic)}
-                                </Typography>
-                                <Typography color="textSecondary">
-                                    Субтопик: {getSubtopicNameById(room.topic, room.subtopic)}
-                                </Typography>
+                                {renderRoomTopic(room)}
+                                {room.duration > 0 && (
+                                    <Typography variant="caption" display="block">
+                                        Длительность: {room.duration} мин
+                                    </Typography>
+                                )}
                             </CardContent>
                             <CardActions>
                                 <Button size="small" onClick={() => handleJoinRoomClick(room)}>
@@ -256,12 +285,12 @@ const RoomList = ({ onJoinRoom }) => {
                 ))}
             </Grid>
 
-            {/* диалог для прямого входа по ID комнаты */}
+            {/* диалог для прямого входа по ID */}
             <Dialog open={openDirectJoin} onClose={() => setOpenDirectJoin(false)}>
                 <DialogTitle>Вход по ID комнаты</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Введите ID комнаты и, если требуется, пароль для прямого входа.
+                        Введите ID комнаты и, если требуется, пароль для входа.
                     </DialogContentText>
                     <TextField
                         autoFocus
@@ -295,7 +324,7 @@ const RoomList = ({ onJoinRoom }) => {
                 <DialogTitle>Введите пароль</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Эта комната закрыта. Пожалуйста, введите пароль для входа.
+                        Эта комната закрыта. Введите пароль для входа.
                     </DialogContentText>
                     <TextField
                         autoFocus

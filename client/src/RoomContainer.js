@@ -12,16 +12,28 @@ const RoomContainer = ({ onJoinRoom, onCreateRoom }) => {
             password: roomData.password,
             open: roomData.open,
             maxUsers: roomData.maxParticipants,
-            topic: roomData.topic,
-            subtopic: roomData.subtopic,
             mode: roomData.mode,
             subType: roomData.subType,
             timer: roomData.timer,
             purpose: roomData.purpose,
             tags: roomData.tags,
-            hidden: roomData.hidden
+            hidden: roomData.hidden,
+
+            topic: roomData.topic,
+            subtopic: roomData.subtopic,
+            customTopic: roomData.customTopic,
+            customSubtopic: roomData.customSubtopic,
+            description: roomData.description,
+            keyQuestions: roomData.keyQuestions,
+            exportOptions: roomData.exportOptions,
+            dontJoin: roomData.dontJoin
         };
-        onCreateRoom(baseRoom);
+
+        const cleanedData = Object.fromEntries(
+            Object.entries(baseRoom).filter(([_, v]) => v !== undefined)
+        );
+
+        onCreateRoom(cleanedData);
     };
 
     return (

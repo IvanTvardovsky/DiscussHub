@@ -17,16 +17,28 @@ type ChatUser struct {
 }
 
 type Room struct {
-	ID         int
-	Name       string
-	Open       bool
-	Password   string
-	Users      []*ChatUser
-	MaxUsers   int
-	TopicID    int
-	SubtopicID int
+	ID              int
+	Name            string
+	Open            bool
+	Password        string
+	Users           []*ChatUser
+	MaxUsers        int
+	TopicID         int    // личный (blitz)
+	SubtopicID      int    // личный (blitz)
+	CustomTopic     string // личный (free)
+	CustomSubtopic  string // личный (free)
+	Mode            string // "personal" или "professional"
+	SubType         string // "blitz" или "free" (для personal)
+	Description     string
+	Purpose         string
+	KeyQuestions    []string
+	Tags            []string
+	Hidden          bool
+	ExportOptions   []string
+	DontJoin        bool
+	ReadyUsers      map[string]bool
+	CreatorUsername string
 
-	ReadyUsers       map[string]bool
 	DiscussionActive bool
 	StartTime        time.Time
 	Duration         time.Duration
@@ -37,13 +49,26 @@ type Room struct {
 }
 
 type RoomForList struct {
-	ID         int    `json:"id"`
-	Name       string `json:"name"`
-	Open       bool   `json:"open"`
-	Users      int    `json:"users"`
-	MaxUsers   int    `json:"maxUsers"`
-	TopicID    int    `json:"topic"`
-	SubtopicID int    `json:"subtopic"`
+	ID               int      `json:"id"`
+	Name             string   `json:"name"`
+	Open             bool     `json:"open"`
+	Users            int      `json:"users"`
+	MaxUsers         int      `json:"maxUsers"`
+	Mode             string   `json:"mode"`
+	SubType          string   `json:"subType"`
+	TopicID          int      `json:"topic"`          // blitz
+	SubtopicID       int      `json:"subtopic"`       // blitz
+	CustomTopic      string   `json:"customTopic"`    // free
+	CustomSubtopic   string   `json:"customSubtopic"` // free
+	Description      string   `json:"description"`
+	Purpose          string   `json:"purpose"`
+	KeyQuestions     []string `json:"keyQuestions"`
+	Tags             []string `json:"tags"`
+	ExportOptions    []string `json:"exportOptions"`
+	DontJoin         bool     `json:"dontJoin"`
+	DiscussionActive bool     `json:"discussionActive"`
+	Duration         int      `json:"duration"` // в минутах
+	StartTime        string   `json:"startTime,omitempty"`
 }
 
 type Message struct {

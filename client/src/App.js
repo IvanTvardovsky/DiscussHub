@@ -82,18 +82,39 @@ const App = () => {
 
     const handleJoinRoom = (roomId, password) => {
         const username = localStorage.getItem('username');
-        const socketUrl = `ws://127.0.0.1:8080/connectToChatroom/${roomId}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+        const socketUrl = `ws://127.0.0.1:8080/ws/chat/${roomId}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
         connectToWebSocket(socketUrl, () => {
             setCurrentView('chat');
         });
     };
 
-    const handleCreateRoom = (roomName, password, open, maxUsers, topic, subtopic) => {
+    const handleCreateRoom = (roomData) => {
         const username = localStorage.getItem('username');
-        const socketUrl = `ws://127.0.0.1:8080/createChatroom/?username=${encodeURIComponent(username)}&roomname=${encodeURIComponent(roomName)}&open=${open}&password=${encodeURIComponent(password)}&maxUsers=${maxUsers}&topic=${topic}&subtopic=${subtopic}`;
-        connectToWebSocket(socketUrl, () => {
-            setCurrentView('chat');
-        });
+
+        fetch('http://127.0.0.1:8080/createChatroom/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ...roomData,
+                creatorName: username,
+            }),
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка создания комнаты');
+                return response.json();
+            })
+            .then(data => {
+                const socketUrl = `ws://127.0.0.1:8080/ws/chat/${data.roomID}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(roomData.password)}`;
+
+                connectToWebSocket(socketUrl, () => {
+                    setCurrentView('chat');
+                });
+            })
+            .catch(error => {
+                setError(error.message);
+            });
     };
 
     const handleRegister = (username, password) => {

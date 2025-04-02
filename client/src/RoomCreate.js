@@ -78,7 +78,7 @@ const professionalPurposes = [
     'Обсуждение проекта'
 ];
 
-const RoomCreate = () => {
+const RoomCreate = ({ onCreateRoom }) => {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         name: '',
@@ -118,52 +118,54 @@ const RoomCreate = () => {
         return true;
     };
 
-    const handleCreate = async () => {
-        // Собираем данные запроса. Поля timer и maxParticipants включаем только если это не блиц-дебаты
-        const roomData = {
+    const handleCreate = () => {
+        const baseData = {
             name: formData.name,
             mode: formData.mode,
             subType: formData.subType,
             description: formData.description,
             password: formData.password,
+            timer: Number(formData.timer),
+            maxParticipants: Number(formData.maxParticipants),
+            open: formData.mode === 'personal' && formData.password === '',
+        };
+
+        const personalData = formData.mode === 'personal' ? {
+            ...(formData.subType === 'blitz' && {
+                topic: formData.topic,
+                subtopic: formData.subtopic
+            }),
+            ...(formData.subType === 'free' && {
+                customTopic: formData.customTopic,
+                customSubtopic: formData.customSubtopic
+            })
+        } : {};
+
+        const professionalData = formData.mode === 'professional' ? {
             purpose: formData.purpose,
             keyQuestions: formData.keyQuestions.split('\n').filter(q => q.trim()),
             tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
             hidden: formData.hidden,
             exportOptions: formData.exportOptions,
-            dontJoin: formData.dontJoin,
-            topic: formData.mode === 'personal'
-                ? (formData.subType === 'free' ? formData.customTopic : formData.topic)
-                : undefined,
-            subtopic: formData.mode === 'personal'
-                ? (formData.subType === 'free' ? formData.customSubtopic : formData.subtopic)
-                : undefined,
-            open: formData.mode === 'personal' && formData.password.trim() === '',
-            // если не блиц
-            ...( (formData.mode === 'professional' ||
-                (formData.mode === 'personal' && formData.subType === 'free')) && {
-                timer: Number(formData.timer),
-                maxParticipants: Number(formData.maxParticipants),
-            }),
+            dontJoin: formData.dontJoin
+        } : {};
+
+        const roomData = {
+            ...baseData,
+            ...personalData,
+            ...professionalData
         };
 
-        try {
-            const response = await fetch('http://localhost:8080/createChatroom/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(roomData),
-            });
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Комната создана', data);
-            } else {
-                console.error('Ошибка создания комнаты', response.statusText);
-            }
-        } catch (error) {
-            console.error('Ошибка запроса', error);
-        }
+        // удаляем пустые строки и undefined значения
+        const cleanedData = Object.fromEntries(
+            Object.entries(roomData).filter(([_, v]) =>
+                v !== undefined &&
+                v !== '' &&
+                !(Array.isArray(v) && v.length === 0)
+            ))
+
+        console.log("Final room data:", cleanedData);
+        onCreateRoom(cleanedData);
     };
 
     return (
