@@ -106,8 +106,7 @@ const RoomCreate = () => {
     };
 
     const validateStep1 = () => {
-        if (formData.name.trim() === '' || formData.timer <= 0) return false;
-        // если личный режим и свободное общение — тема обязательна
+        if (formData.name.trim() === '') return false;
         if (formData.mode === 'personal' && formData.subType === 'free' && formData.customTopic.trim() === '') return false;
         return true;
     };
@@ -120,34 +119,36 @@ const RoomCreate = () => {
     };
 
     const handleCreate = async () => {
-        let roomData = {
+        // Собираем данные запроса. Поля timer и maxParticipants включаем только если это не блиц-дебаты
+        const roomData = {
             name: formData.name,
             mode: formData.mode,
             subType: formData.subType,
-            timer: Number(formData.timer),
-            maxParticipants: Number(formData.maxParticipants),
             description: formData.description,
             password: formData.password,
             purpose: formData.purpose,
-            // ключевые вопросы и теги в массивы
             keyQuestions: formData.keyQuestions.split('\n').filter(q => q.trim()),
             tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
             hidden: formData.hidden,
             exportOptions: formData.exportOptions,
             dontJoin: formData.dontJoin,
-
             topic: formData.mode === 'personal'
                 ? (formData.subType === 'free' ? formData.customTopic : formData.topic)
                 : undefined,
             subtopic: formData.mode === 'personal'
                 ? (formData.subType === 'free' ? formData.customSubtopic : formData.subtopic)
                 : undefined,
-
             open: formData.mode === 'personal' && formData.password.trim() === '',
+            // если не блиц
+            ...( (formData.mode === 'professional' ||
+                (formData.mode === 'personal' && formData.subType === 'free')) && {
+                timer: Number(formData.timer),
+                maxParticipants: Number(formData.maxParticipants),
+            }),
         };
 
         try {
-            const response = await fetch('/createChatroom/', {
+            const response = await fetch('http://localhost:8080/createChatroom/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -294,27 +295,32 @@ const RoomCreate = () => {
                         </>
                     )}
 
-                    <Grid item xs={6}>
-                        <TextField
-                            fullWidth
-                            type="number"
-                            label="Длительность (минут)"
-                            value={formData.timer}
-                            onChange={(e) => setFormData({ ...formData, timer: e.target.value })}
-                            required
-                            inputProps={{ min: 1, max: 1500 }}
-                        />
-                    </Grid>
-                    <Grid item xs={6}>
-                        <TextField
-                            fullWidth
-                            type="number"
-                            label="Макс. участников"
-                            value={formData.maxParticipants}
-                            onChange={(e) => setFormData({ ...formData, maxParticipants: e.target.value })}
-                            inputProps={{ min: 2, max: 20 }}
-                        />
-                    </Grid>
+                    {(formData.mode === 'professional' ||
+                        (formData.mode === 'personal' && formData.subType === 'free')) && (
+                        <>
+                            <Grid item xs={6}>
+                                <TextField
+                                    fullWidth
+                                    type="number"
+                                    label="Длительность (минут)"
+                                    value={formData.timer}
+                                    onChange={(e) => setFormData({ ...formData, timer: e.target.value })}
+                                    required
+                                    inputProps={{ min: 1, max: 1500 }}
+                                />
+                            </Grid>
+                            <Grid item xs={6}>
+                                <TextField
+                                    fullWidth
+                                    type="number"
+                                    label="Макс. участников"
+                                    value={formData.maxParticipants}
+                                    onChange={(e) => setFormData({ ...formData, maxParticipants: e.target.value })}
+                                    inputProps={{ min: 2, max: 20 }}
+                                />
+                            </Grid>
+                        </>
+                    )}
                 </Grid>
             )}
 
