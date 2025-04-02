@@ -91,6 +91,7 @@ const RoomCreate = ({ onCreateRoom }) => {
         timer: 30,
         maxParticipants: 2,
         description: '',
+        accessType: 'open',
         password: '',
         purpose: '',
         keyQuestions: '',
@@ -114,8 +115,11 @@ const RoomCreate = ({ onCreateRoom }) => {
     const validateStep2 = () => {
         if (formData.mode === 'professional') {
             return formData.password.trim() !== '' && formData.purpose !== '';
+        } else {
+            return formData.accessType === 'closed'
+                ? formData.password.trim() !== ''
+                : true;
         }
-        return true;
     };
 
     const handleCreate = () => {
@@ -345,11 +349,14 @@ const RoomCreate = ({ onCreateRoom }) => {
                                     <FormLabel component="legend">Доступ</FormLabel>
                                     <RadioGroup
                                         row
-                                        value={formData.password ? 'closed' : 'open'}
+                                        value={formData.accessType}
                                         onChange={(e) => {
-                                            if (e.target.value === 'open') {
-                                                setFormData({ ...formData, password: '' });
-                                            }
+                                            const newAccessType = e.target.value;
+                                            setFormData({
+                                                ...formData,
+                                                accessType: newAccessType,
+                                                password: newAccessType === 'open' ? '' : formData.password,
+                                            });
                                         }}
                                     >
                                         <FormControlLabel
@@ -365,7 +372,7 @@ const RoomCreate = ({ onCreateRoom }) => {
                                     </RadioGroup>
                                 </FormControl>
                             </Grid>
-                            {formData.password && (
+                            {formData.accessType === 'closed' && (
                                 <Grid item xs={12}>
                                     <TextField
                                         fullWidth
@@ -373,6 +380,7 @@ const RoomCreate = ({ onCreateRoom }) => {
                                         label="Пароль"
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        required
                                     />
                                 </Grid>
                             )}
