@@ -119,7 +119,7 @@ func startDiscussion(room *structures.Room) {
 	informing.SendDiscussionStart(room)
 
 	room.DiscussionActive = true
-	room.Duration = 10 * time.Minute
+	room.Duration = 2 * time.Minute //todo 10
 	room.StartTime = time.Now()
 
 	// запуск таймера

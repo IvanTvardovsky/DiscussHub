@@ -26,7 +26,7 @@ const LoginComponent = ({
 
                     <TextField
                         fullWidth
-                        label="Email or Username"
+                        label="Email или имя пользователя"
                         variant="outlined"
                         margin="normal"
                         value={identifier}
@@ -35,7 +35,7 @@ const LoginComponent = ({
 
                     <TextField
                         fullWidth
-                        label="Password"
+                        label="Пароль"
                         type="password"
                         variant="outlined"
                         margin="normal"
@@ -50,12 +50,12 @@ const LoginComponent = ({
                         onClick={onLogin}
                         sx={{ mt: 3, mb: 2 }}
                     >
-                        Sign In
+                        Войти
                     </Button>
 
                     <Box sx={{ textAlign: 'center', mb: 2 }}>
                         <Link href="#" variant="body2" onClick={onGoToRegistration}>
-                            Forgot password?
+                            Забыли пароль?
                         </Link>
                     </Box>
 
@@ -65,7 +65,7 @@ const LoginComponent = ({
                         size="large"
                         onClick={onGoToRegistration}
                     >
-                        Create New Account
+                        Создать новый аккаунт
                     </Button>
                 </Box>
             </Grid>

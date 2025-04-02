@@ -24,7 +24,7 @@ const RegistrationComponent = ({
 
                     <TextField
                         fullWidth
-                        label="Username"
+                        label="Имя пользователя"
                         variant="outlined"
                         margin="normal"
                         value={formData.username}
@@ -43,7 +43,7 @@ const RegistrationComponent = ({
 
                     <TextField
                         fullWidth
-                        label="Password"
+                        label="Пароль"
                         type="password"
                         variant="outlined"
                         margin="normal"
@@ -53,7 +53,7 @@ const RegistrationComponent = ({
 
                     <TextField
                         fullWidth
-                        label="Confirm Password"
+                        label="Подтвердите пароль"
                         type="password"
                         variant="outlined"
                         margin="normal"
@@ -68,7 +68,7 @@ const RegistrationComponent = ({
                         onClick={onRegister}
                         sx={{ mt: 3, mb: 2 }}
                     >
-                        Create Account
+                        Создать аккаунт
                     </Button>
 
                     <Typography variant="body2" sx={{ mb: 2 }}>
@@ -83,7 +83,7 @@ const RegistrationComponent = ({
                         size="large"
                         onClick={onGoToLogin}
                     >
-                        Already have an account? Sign In
+                        Уже есть аккаунт? Войдите
                     </Button>
                 </Box>
             </Grid>

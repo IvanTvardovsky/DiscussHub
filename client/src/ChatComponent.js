@@ -7,6 +7,7 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
     const [showRatingForm, setShowRatingForm] = useState(false);
     const [ratings, setRatings] = useState({ politeness: 0, argumentsQuality: 0 });
     const messagesEndRef = useRef(null);
+    const [isChatLocked, setIsChatLocked] = useState(false);
 
     useEffect(() => {
         if (isDiscussionActive) {
@@ -20,7 +21,7 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
         if (!socket) return;
 
         const messageListener = (event) => {
-            console.log('MESSAGE IN CHAT COMPONENT:', event.data); // Добавим логирование
+            console.log('MESSAGE IN CHAT COMPONENT:', event.data);
             const message = JSON.parse(event.data);
 
             switch(message.type) {
@@ -41,6 +42,7 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
                 case 'discussion_end':
                     setMessageHistory(prev => [...prev, message]);
                     setIsDiscussionActive(false);
+                    setIsChatLocked(true);
                     setShowRatingForm(true);
                     break;
                 case 'timer':
@@ -75,7 +77,7 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messageHistory]);
 
-    const sendMessage = () => { console.log('MESSAGE IN CHAT COMPONENT:', event.data); // Добавим логирование
+    const sendMessage = () => { console.log('MESSAGE IN CHAT COMPONENT:', event.data);
         const trimmed = messageInput.trim();
 
         if (!isDiscussionActive) {
@@ -114,6 +116,7 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
         }));
         setShowRatingForm(false);
         setRatings({ politeness: 0, argumentsQuality: 0 });
+        setIsChatLocked(true);
     };
 
     return (
@@ -214,13 +217,14 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
                             sendMessage();
                         }
                     }}
-                    disabled={showRatingForm}
+                    disabled={isChatLocked || showRatingForm}
                 />
                 <Button
                     variant="contained"
                     color="primary"
                     onClick={sendMessage}
                     disabled={
+                        isChatLocked ||
                         (isDiscussionActive && messageInput.trim() === '') ||
                         (!isDiscussionActive && messageInput.trim() !== '+') ||
                         showRatingForm

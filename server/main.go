@@ -70,6 +70,9 @@ func main() {
 	router.GET("/roomUpdates", func(c *gin.Context) {
 		server.HandleConnections(c.Writer, c.Request, &rooms)
 	})
+	router.POST("/rateOpponent", AuthMiddleware(), func(c *gin.Context) {
+		handlers.RateOpponent(c, db)
+	})
 
 	go server.HandleMessages()
 	go func() {
