@@ -77,7 +77,7 @@ func CreateChatroom(c *gin.Context, rooms *map[int]*structures.Room) {
 		Mode            string   `json:"mode"`
 		SubType         string   `json:"subType"`
 		Timer           int      `json:"timer"`
-		MaxParticipants int      `json:"maxParticipants"`
+		MaxParticipants int      `json:"maxUsers"`
 		Description     string   `json:"description"`
 		Password        string   `json:"password"`
 		Purpose         string   `json:"purpose"`

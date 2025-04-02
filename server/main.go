@@ -82,7 +82,7 @@ func main() {
 			sort.Slice(roomsToSend, func(i, j int) bool {
 				return (roomsToSend)[i].ID < (roomsToSend)[j].ID
 			})
-			//logger.Log.Traceln("Room update 5s: ", roomsToSend)
+			logger.Log.Traceln("Room update 5s: ", roomsToSend)
 			server.Broadcast <- roomsToSend
 		}
 	}()
