@@ -26,6 +26,9 @@ func Reader(conn *websocket.Conn, room *structures.Room, rooms *map[int]*structu
 		informing.InformUserLeft(room, leftUser)
 		logger.Log.Traceln(fmt.Sprintf("Current amount of users in room %d: %d", room.ID, len(room.Users)))
 		if len(room.Users) == 0 {
+			go func() {
+				//todo если никого нет больше часа, то удаляем
+			}()
 			delete(*rooms, room.ID)
 			logger.Log.Traceln(fmt.Sprintf("Deleting room %d", room.ID))
 		}
@@ -76,7 +79,7 @@ func handleReadyCheck(room *structures.Room, conn *websocket.Conn, username stri
 	informing.SendUserReady(room, username)
 
 	logger.Log.Tracef("Ready users: %d", len(room.ReadyUsers))
-	if len(room.ReadyUsers) == 2 {
+	if len(room.ReadyUsers) == room.MaxUsers {
 		startDiscussion(room)
 	}
 }
@@ -92,34 +95,37 @@ func startDiscussion(room *structures.Room) {
 
 	logger.Log.Tracef("Starting discussion %d", room.ID)
 
-	// получаем тезисы для текущего сабтопика
-	theses := getThesesForSubtopic(room.SubtopicID)
-	if len(theses) < 2 {
-		logger.Log.Errorf("No theses found for subtopic %d", room.SubtopicID)
-		return
-	}
-
-	// перемешиваем тезисы для случайного распределения
-	rand.Shuffle(len(theses), func(i, j int) {
-		theses[i], theses[j] = theses[j], theses[i]
-	})
-
-	logger.Log.Tracef("Theses: %v", theses)
-
-	room.AssignedTheses = theses
-	room.UserTheses = make(map[string]string)
-
-	for i, user := range room.Users {
-		if i >= room.MaxUsers {
-			break
+	if room.Mode == "personal" && room.SubType == "blitz" {
+		theses := getThesesForSubtopic(room.SubtopicID)
+		if len(theses) < 2 {
+			logger.Log.Errorf("No theses found for subtopic %d", room.SubtopicID)
+			return
 		}
-		room.UserTheses[user.Name] = theses[i]
+
+		// получаем тезисы для текущего сабтопика
+
+		// перемешиваем тезисы для случайного распределения
+		rand.Shuffle(len(theses), func(i, j int) {
+			theses[i], theses[j] = theses[j], theses[i]
+		})
+
+		logger.Log.Tracef("Theses: %v", theses)
+
+		room.AssignedTheses = theses
+		room.UserTheses = make(map[string]string)
+
+		for i, user := range room.Users {
+			if i >= room.MaxUsers {
+				break
+			}
+			room.UserTheses[user.Name] = theses[i]
+		}
 	}
-	// отправка темы и тезисов
+
+	// отправка сообщения о старте (+ для блитца темы и тезисов)
 	informing.SendDiscussionStart(room)
 
 	room.DiscussionActive = true
-	room.Duration = 2 * time.Minute //todo 10
 	room.StartTime = time.Now()
 
 	// запуск таймера
@@ -132,7 +138,20 @@ func getThesesForSubtopic(subtopicID int) []string {
 
 // в логике таймера
 func discussionTimer(room *structures.Room) {
-	ticker := time.NewTicker(1 * time.Minute) // отправляем обновления раз в минуту
+	var reminderInterval time.Duration
+
+	switch {
+	case room.Duration <= 30*time.Minute:
+		reminderInterval = 1 * time.Minute
+	case room.Duration <= 3*time.Hour:
+		reminderInterval = 5 * time.Minute
+	case room.Duration <= 6*time.Hour:
+		reminderInterval = 15 * time.Minute
+	default:
+		reminderInterval = 1 * time.Hour
+	}
+
+	ticker := time.NewTicker(reminderInterval)
 	defer ticker.Stop()
 
 	for {

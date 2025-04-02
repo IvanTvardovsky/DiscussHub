@@ -66,11 +66,24 @@ func sendToOne(user *structures.ChatUser, msg structures.Message) {
 }
 
 func SendTimerUpdate(room *structures.Room, remaining time.Duration) {
+	if remaining < 0 {
+		remaining = 0
+	}
+
+	hours := int(remaining.Hours())
+	minutes := int(remaining.Minutes()) % 60
+	seconds := int(remaining.Seconds()) % 60
+
+	var timeStr string
+	if hours > 0 {
+		timeStr = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+	} else {
+		timeStr = fmt.Sprintf("%02d:%02d", minutes, seconds)
+	}
+
 	msg := structures.Message{
-		Type: "timer",
-		Content: fmt.Sprintf("Осталось времени: %02d:%02d",
-			int(remaining.Minutes()),
-			int(remaining.Seconds())%60),
+		Type:    "timer",
+		Content: fmt.Sprintf("Осталось времени: %s", timeStr),
 	}
 	sendToAll(room, msg)
 }
@@ -78,7 +91,7 @@ func SendTimerUpdate(room *structures.Room, remaining time.Duration) {
 func SendDiscussionEnd(room *structures.Room) {
 	msg := structures.Message{
 		Type:    "discussion_end",
-		Content: "Обсуждение закончено! Оцените вашего оппонента",
+		Content: "Обсуждение закончено! Оцените ваших собеседников",
 	}
 	sendToAll(room, msg)
 }
@@ -93,7 +106,7 @@ func sendTheses(room *structures.Room) {
 	}
 }
 
-func SendDiscussionStart(room *structures.Room) {
+func sendBlitzDiscussion(room *structures.Room) {
 	time.Sleep(2 * time.Second)
 	msg := structures.Message{
 		Type:    "system",
@@ -129,6 +142,37 @@ func SendDiscussionStart(room *structures.Room) {
 	}
 	sendToAll(room, msg)
 	time.Sleep(2 * time.Second)
+}
+
+func sendFreeDiscussion(room *structures.Room) {
+	msg := structures.Message{
+		Type:    "discussion_start",
+		Content: "🎉 Дискуссия началась!",
+	}
+	sendToAll(room, msg)
+	time.Sleep(2 * time.Second)
+}
+
+func sendProfessionalDiscussion(room *structures.Room) {
+	msg := structures.Message{
+		Type:    "discussion_start",
+		Content: "🎉 Дискуссия началась!",
+	}
+	sendToAll(room, msg)
+	time.Sleep(2 * time.Second)
+}
+
+func SendDiscussionStart(room *structures.Room) {
+	switch room.Mode {
+	case "personal":
+		if room.SubType == "blitz" {
+			sendBlitzDiscussion(room)
+		} else if room.SubType == "free" {
+			sendFreeDiscussion(room)
+		}
+	case "professional":
+		sendProfessionalDiscussion(room)
+	}
 }
 
 func SendUserReady(room *structures.Room, username string) {
