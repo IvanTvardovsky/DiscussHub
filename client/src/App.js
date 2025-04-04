@@ -4,6 +4,7 @@ import Registration from './Registration';
 import ChatComponent from './ChatComponent';
 import RoomContainer from './RoomContainer';
 import ArchiveComponent from './ArchiveComponent';
+import DiscussionDetails from './DiscussionDetails';
 
 import {
     Container,
@@ -40,6 +41,7 @@ const App = () => {
     const [roomName, setRoomName] = useState('Комната');
     const [error, setError] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [selectedDiscussionId, setSelectedDiscussionId] = useState(null);
 
     useEffect(() => {
         const username = localStorage.getItem('username');
@@ -204,9 +206,27 @@ const App = () => {
                         onCreateRoom={handleCreateRoom}
                     />
                 )}
-                {currentView === 'archive' && <ArchiveComponent />}
                 {currentView === 'profile' && <ProfileComponent />}
                 {currentView === 'leaderboard' && <LeaderboardComponent />}
+
+                {currentView === 'archive' && (
+                    <ArchiveComponent
+                        onSelectDiscussion={(id) => {
+                            setSelectedDiscussionId(id);
+                            setCurrentView('discussion-details');
+                        }}
+                    />
+                )}
+
+                {currentView === 'discussion-details' && (
+                    <DiscussionDetails
+                        discussionId={selectedDiscussionId}
+                        onBack={() => {
+                            setCurrentView('archive');
+                            setSelectedDiscussionId(null);
+                        }}
+                    />
+                )}
                 <Snackbar open={!!error} autoHideDuration={6000} onClose={handleCloseError}>
                     <Alert onClose={handleCloseError} severity="error" sx={{ width: '100%' }}>
                         {error}
