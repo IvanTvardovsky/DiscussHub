@@ -3,6 +3,8 @@ import Login from './Login';
 import Registration from './Registration';
 import ChatComponent from './ChatComponent';
 import RoomContainer from './RoomContainer';
+import ArchiveComponent from './ArchiveComponent';
+
 import {
     Container,
     CssBaseline,
@@ -12,15 +14,6 @@ import {
     Toolbar,
     Button
 } from '@mui/material';
-
-const ArchiveComponent = () => (
-    <Container>
-        <div style={{ marginTop: 32 }}>
-            <h4>Архив</h4>
-            <p>Список завершенных чатов будет здесь</p>
-        </div>
-    </Container>
-);
 
 const ProfileComponent = () => (
     <Container>

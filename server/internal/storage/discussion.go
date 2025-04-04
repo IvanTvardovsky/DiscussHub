@@ -23,16 +23,14 @@ func SaveDiscussionHistory(db *sql.DB, room *structures.Room) {
 	exportOptionsJSON, _ := json.Marshal(room.ExportOptions)
 	participantsJSON, _ := json.Marshal(room.Participants)
 
-	// todo топик и субтопик для блитца поменять
-
 	_, err = db.Exec(`
         INSERT INTO discussions 
             (room_id, mode, subtype, duration, start_time, end_time,
              messages, creator_username, key_questions, tags,
              export_options, participants, topic_id, subtopic_id,
-             custom_topic, custom_subtopic, description, purpose) 
+             custom_topic, custom_subtopic, description, purpose, room_name, public) 
         VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
 		room.ID,
 		room.Mode,
 		room.SubType,
@@ -51,6 +49,8 @@ func SaveDiscussionHistory(db *sql.DB, room *structures.Room) {
 		room.CustomSubtopic,
 		room.Description,
 		room.Purpose,
+		room.Name,
+		room.Password == "" || room.Hidden,
 	)
 
 	if err != nil {

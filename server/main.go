@@ -69,6 +69,9 @@ func main() {
 	router.GET("/discussion/:id", AuthMiddleware(), func(c *gin.Context) {
 		handlers.GetDiscussionByID(c, db)
 	})
+	router.GET("/archive", AuthMiddleware(), func(c *gin.Context) {
+		handlers.GetArchives(c, db)
+	})
 
 	go server.HandleMessages()
 	go func() {

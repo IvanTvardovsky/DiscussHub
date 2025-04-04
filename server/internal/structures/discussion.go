@@ -3,6 +3,8 @@ package structures
 type DiscussionResponse struct {
 	ID            int       `json:"id"`
 	RoomID        int       `json:"room_id"`
+	RoomName      string    `json:"room_name"`
+	Public        bool      `json:"public"`
 	Mode          string    `json:"mode"`
 	SubType       string    `json:"subtype"`
 	Duration      string    `json:"duration"`

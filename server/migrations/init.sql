@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE discussions (
     id SERIAL PRIMARY KEY,
     room_id INT NOT NULL,
+    room_name VARCHAR(64) NOT NULL,
+    public BOOLEAN NOT NULL DEFAULT false,
     mode VARCHAR(20) NOT NULL,
     subtype VARCHAR(20),
     duration INTERVAL NOT NULL,
