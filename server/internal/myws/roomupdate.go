@@ -8,6 +8,7 @@ import (
 	"sort"
 )
 
+// HandleConnections апгрейдит соединение до вебсокета при заходе пользователя в список чатрумов, чтобы динамически показывать открытые
 func (server *WebSocketServer) HandleConnections(w http.ResponseWriter, r *http.Request, rooms *map[int]*structures.Room) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

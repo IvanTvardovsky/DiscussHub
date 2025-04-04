@@ -26,7 +26,6 @@ func main() {
 	time.Sleep(10 * time.Second)
 	cfg := config.GetConfig()
 	db := database.InitPostgres(cfg)
-	//redisClient := database.InitRedis(cfg)
 
 	defer func(db *sql.DB) {
 		err := db.Close()
@@ -34,12 +33,6 @@ func main() {
 			logger.Log.Errorln("Error closing PG database: " + err.Error())
 		}
 	}(db)
-	//defer func(redisClient *redis.Client) {
-	//	err := redisClient.Close()
-	//	if err != nil {
-	//		logger.Log.Errorln("Error closing Redis database: " + err.Error())
-	//	}
-	//}(redisClient)
 
 	logger.Log.Infoln("Starting service...")
 	router := gin.Default()
@@ -62,7 +55,7 @@ func main() {
 		handlers.Register(c, db)
 	})
 	router.GET("/ws/chat/:num", AuthMiddleware(), func(c *gin.Context) {
-		handlers.ConnectToChatroom(c, &rooms)
+		handlers.ConnectToChatroom(c, db, &rooms)
 	})
 	router.POST("/createChatroom/", AuthMiddleware(), func(c *gin.Context) {
 		handlers.CreateChatroom(c, &rooms)
@@ -72,6 +65,9 @@ func main() {
 	})
 	router.POST("/rateOpponent", AuthMiddleware(), func(c *gin.Context) {
 		handlers.RateOpponent(c, db)
+	})
+	router.GET("/discussion/:id", AuthMiddleware(), func(c *gin.Context) {
+		handlers.GetDiscussionByID(c, db)
 	})
 
 	go server.HandleMessages()

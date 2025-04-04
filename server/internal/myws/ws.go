@@ -2,8 +2,10 @@ package myws
 
 import (
 	"awesomeChat/internal/informing"
+	"awesomeChat/internal/storage"
 	"awesomeChat/internal/structures"
 	"awesomeChat/package/logger"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
@@ -13,7 +15,7 @@ import (
 	"time"
 )
 
-func Reader(conn *websocket.Conn, room *structures.Room, rooms *map[int]*structures.Room) {
+func Reader(db *sql.DB, conn *websocket.Conn, room *structures.Room, rooms *map[int]*structures.Room) {
 	var leftUser string
 	defer func() {
 		for i, user := range room.Users {
@@ -23,6 +25,9 @@ func Reader(conn *websocket.Conn, room *structures.Room, rooms *map[int]*structu
 				break
 			}
 		}
+		room.Mu.Lock()
+		delete(room.ReadyUsers, leftUser)
+		room.Mu.Unlock()
 		informing.InformUserLeft(room, leftUser)
 		logger.Log.Traceln(fmt.Sprintf("Current amount of users in room %d: %d", room.ID, len(room.Users)))
 		if len(room.Users) == 0 {
@@ -48,13 +53,19 @@ func Reader(conn *websocket.Conn, room *structures.Room, rooms *map[int]*structu
 			logger.Log.Traceln("Unmarshal message error: " + err.Error())
 			return
 		}
+		msg.Timestamp = time.Now()
+		msg.UserID = "0" // todo
+		room.Mu.Lock()
+		room.Messages = append(room.Messages, msg)
+		room.Mu.Unlock()
 
 		switch msg.Type {
 		case "usual":
 			handleUsualMessage(room, conn, p)
 		case "ready_check":
-			handleReadyCheck(room, conn, msg.Username)
+			handleReadyCheck(db, room, conn, msg.Username)
 		case "rate":
+			// todo не нужно
 			handleRating(room, msg)
 		}
 	}
@@ -71,7 +82,7 @@ func handleUsualMessage(room *structures.Room, conn *websocket.Conn, msg []byte)
 	}
 }
 
-func handleReadyCheck(room *structures.Room, conn *websocket.Conn, username string) {
+func handleReadyCheck(db *sql.DB, room *structures.Room, conn *websocket.Conn, username string) {
 	room.Mu.Lock()
 	room.ReadyUsers[username] = true
 	room.Mu.Unlock()
@@ -80,7 +91,7 @@ func handleReadyCheck(room *structures.Room, conn *websocket.Conn, username stri
 
 	logger.Log.Tracef("Ready users: %d", len(room.ReadyUsers))
 	if len(room.ReadyUsers) == room.MaxUsers {
-		startDiscussion(room)
+		startDiscussion(db, room)
 	}
 }
 
@@ -89,11 +100,15 @@ func handleRating(room *structures.Room, msg structures.Message) {
 	//todo
 }
 
-func startDiscussion(room *structures.Room) {
+func startDiscussion(db *sql.DB, room *structures.Room) {
 	room.Mu.Lock()
 	defer room.Mu.Unlock()
 
-	logger.Log.Tracef("Starting discussion %d", room.ID)
+	logger.Log.Tracef("Starting discussion %d. Mode: %s, subtype: %s", room.ID, room.Mode, room.SubType)
+
+	for _, user := range room.Users {
+		room.Participants = append(room.Participants, user.Name)
+	}
 
 	if room.Mode == "personal" && room.SubType == "blitz" {
 		theses := getThesesForSubtopic(room.SubtopicID)
@@ -129,7 +144,7 @@ func startDiscussion(room *structures.Room) {
 	room.StartTime = time.Now()
 
 	// запуск таймера
-	go discussionTimer(room)
+	go discussionTimer(db, room)
 }
 
 func getThesesForSubtopic(subtopicID int) []string {
@@ -137,7 +152,8 @@ func getThesesForSubtopic(subtopicID int) []string {
 }
 
 // в логике таймера
-func discussionTimer(room *structures.Room) {
+func discussionTimer(db *sql.DB, room *structures.Room) {
+	defer storage.SaveDiscussionHistory(db, room)
 	var reminderInterval time.Duration
 
 	switch {

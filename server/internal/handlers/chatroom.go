@@ -6,6 +6,7 @@ import (
 	"awesomeChat/internal/structures"
 	"awesomeChat/package/logger"
 	"awesomeChat/package/web"
+	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"math/rand"
@@ -16,7 +17,7 @@ import (
 
 const maxRooms = 1000
 
-func ConnectToChatroom(c *gin.Context, rooms *map[int]*structures.Room) {
+func ConnectToChatroom(c *gin.Context, db *sql.DB, rooms *map[int]*structures.Room) {
 	chatNumber, _ := strconv.Atoi(c.Param("num"))
 	username := c.Query("username")
 	password := c.Query("password")
@@ -58,7 +59,7 @@ func ConnectToChatroom(c *gin.Context, rooms *map[int]*structures.Room) {
 	logger.Log.Traceln(fmt.Sprintf("Current amount of users in room %d: %d", chatNumber, len((*rooms)[chatNumber].Users)))
 	informing.SetRoomName(room)
 	informing.InformUserJoined(room, username)
-	go myws.Reader(websocket, room, rooms)
+	go myws.Reader(db, websocket, room, rooms)
 }
 
 func getRandomAvailableRoomNumber(rooms *map[int]*structures.Room, maxRooms int) int {
@@ -147,6 +148,8 @@ func CreateChatroom(c *gin.Context, rooms *map[int]*structures.Room) {
 		AssignedTheses:  []string{},
 		UserTheses:      make(map[string]string),
 		CreatorUsername: req.CreatorName,
+		Messages:        make([]structures.Message, 0),
+		Participants:    make([]string, 0),
 	}
 
 	if req.Mode == "personal" && req.SubType == "blitz" {
