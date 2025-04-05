@@ -8,6 +8,7 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
     const [ratings, setRatings] = useState({ politeness: 0, argumentsQuality: 0 });
     const messagesEndRef = useRef(null);
     const [isChatLocked, setIsChatLocked] = useState(false);
+    const currentUsername = localStorage.getItem('username');
 
     useEffect(() => {
         if (isDiscussionActive) {
@@ -60,7 +61,30 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
                 //     onUpdateRoomName(message.content);
                 //     break;
                 case 'usual':
-                    setMessageHistory(prev => [...prev, message]);
+                    setMessageHistory(prev => {
+                        const filtered = prev.filter(m => m.id !== message.tempId);
+                        return [...filtered, {
+                            id: message.id,
+                            type: message.type,
+                            content: message.content,
+                            username: message.username,
+                            timestamp: new Date(message.timestamp),
+                            likeCount: message.likeCount || 0,
+                            dislikeCount: message.dislikeCount || 0
+                        }];
+                    });
+                    break;
+                case 'vote_update':
+                    setMessageHistory(prev => prev.map(m => {
+                        if (m.id === message.messageID) {
+                            return {
+                                ...m,
+                                likeCount: message.likeCount,
+                                dislikeCount: message.dislikeCount
+                            };
+                        }
+                        return m;
+                    }));
                     break;
                 default:
                     console.error('Неизвестный тип сообщения:', message.type);
@@ -77,30 +101,42 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messageHistory]);
 
-    const sendMessage = () => { console.log('MESSAGE IN CHAT COMPONENT:', event.data);
+    const sendMessage = () => {
         const trimmed = messageInput.trim();
+        const username = localStorage.getItem('username');
 
         if (!isDiscussionActive) {
             if (trimmed === '+') {
                 const msg = {
                     type: 'ready_check',
-                    username: localStorage.getItem('username')
+                    username: username
                 };
                 socket.send(JSON.stringify(msg));
+                setMessageInput('');
             }
-            setMessageInput('');
             return;
         }
 
         if (trimmed !== '') {
-            const newMessage = {
+            const tempId = `temp-${Date.now()}`;
+            const tempMessage = {
+                id: tempId,
                 type: 'usual',
                 content: trimmed,
-                username: localStorage.getItem('username')
+                username: username,
+                timestamp: new Date().toISOString(),
+                likeCount: 0,
+                dislikeCount: 0,
+                isPending: true
             };
-            // добавляем сообщение в историю сразу
-            setMessageHistory(prev => [...prev, newMessage]);
-            socket.send(JSON.stringify(newMessage));
+
+            setMessageHistory(prev => [...prev, tempMessage]);
+            socket.send(JSON.stringify({
+                type: 'usual',
+                content: trimmed,
+                username: username,
+                tempId: tempId
+            }));
             setMessageInput('');
         }
     };
@@ -119,6 +155,15 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
         setIsChatLocked(true);
     };
 
+    const handleVote = (messageId, vote) => {
+        socket.send(JSON.stringify({
+            type: 'rate',
+            messageID: messageId,
+            vote: vote, // отправляем как число (1, -1, 0)
+            username: currentUsername,
+        }));
+    };
+
     return (
         <Container component="main" maxWidth="md" sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -131,7 +176,7 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
             <Paper elevation={3} sx={{ mt: 2, p: 2, flexGrow: 1, overflowY: 'auto' }}>
                 {messageHistory.map((message, index) => (
                     <Box
-                        key={index}
+                        key={message.id || index}
                         sx={{
                             mb: 1,
                             textAlign: ['system', 'timer', 'discussion_end'].includes(message.type)
@@ -142,7 +187,38 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
                             borderRadius: 1
                         }}
                     >
-                        {['userJoined', 'userLeft', 'system', 'discussion_start'].includes(message.type) ? (
+                        {message.type === 'usual' ? (
+                                <>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography variant="subtitle2">
+                                            {message.username}
+                                            <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+                                                {message.timestamp instanceof Date ?
+                                                    message.timestamp.toLocaleTimeString() :
+                                                    new Date(message.timestamp).toLocaleTimeString()}
+                                            </Typography>
+                                        </Typography>
+                                        <Box>
+                                            <Button
+                                                size="small"
+                                                onClick={() => handleVote(message.id, 1)}
+                                                disabled={message.username === currentUsername}
+                                            >
+                                                👍 {message.likeCount}
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                onClick={() => handleVote(message.id, -1)}
+                                                disabled={message.username === currentUsername}
+                                                sx={{ ml: 1 }}
+                                            >
+                                                👎 {message.dislikeCount}
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                    <Typography variant="body1">{message.content}</Typography>
+                                </>
+                            ) : ['userJoined', 'userLeft', 'system', 'discussion_start'].includes(message.type) ? (
                             <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <span>⚙️</span>
                                 <span>[SYSTEM]: {message.content}</span>

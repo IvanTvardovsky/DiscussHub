@@ -81,9 +81,22 @@ type RoomForList struct {
 }
 
 type Message struct {
-	Type      string    `json:"type"` // "usual", "system", "ready_check", "timer", "discussion_start", "discussion_end"
-	Content   string    `json:"content"`
-	Username  string    `json:"username"`
-	UserID    string    `json:"userID"`
-	Timestamp time.Time `json:"timestamp"`
+	ID           string         `json:"id"`
+	Type         string         `json:"type"` // "usual", "system", "ready_check", "timer", "discussion_start", "discussion_end"
+	Content      string         `json:"content"`
+	Username     string         `json:"username"`
+	UserID       string         `json:"userID"`
+	Timestamp    time.Time      `json:"timestamp"`
+	LikeCount    int            `json:"likeCount"`
+	DislikeCount int            `json:"dislikeCount"`
+	Votes        map[string]int `json:"-"` // username -> vote (-1, 0, 1)
+	TempID       string         `json:"tempId,omitempty"`
+}
+
+type RateMessage struct {
+	UserID          string `json:"userID"`    // todo кто прислал
+	Username        string `json:"username"`  // кто прислал
+	Type            string `json:"type"`      // "usual", "system", "ready_check", "timer", "discussion_start", "discussion_end"
+	TargetMessageID string `json:"messageID"` // uuid
+	Vote            int    `json:"vote"`      // (-1, 0, 1)
 }

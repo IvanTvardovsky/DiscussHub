@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"math/rand"
 	"net/http"
@@ -53,32 +54,54 @@ func Reader(db *sql.DB, conn *websocket.Conn, room *structures.Room, rooms *map[
 			logger.Log.Traceln("Unmarshal message error: " + err.Error())
 			return
 		}
-		msg.Timestamp = time.Now()
-		msg.UserID = "0" // todo
-		room.Mu.Lock()
-		room.Messages = append(room.Messages, msg)
-		room.Mu.Unlock()
 
 		switch msg.Type {
 		case "usual":
-			handleUsualMessage(room, conn, p)
+			var clientMsg structures.Message
+			err = json.Unmarshal(p, &clientMsg)
+			if err != nil {
+				logger.Log.Traceln("Unmarshal message error: " + err.Error())
+				return
+			}
+
+			finalMsg := structures.Message{
+				ID:           uuid.New().String(),
+				Type:         "usual",
+				Content:      clientMsg.Content,
+				Username:     clientMsg.Username,
+				Timestamp:    time.Now(),
+				LikeCount:    0,
+				DislikeCount: 0,
+				Votes:        make(map[string]int),
+				TempID:       clientMsg.TempID,
+			}
+
+			room.Mu.Lock()
+			room.Messages = append(room.Messages, finalMsg)
+			room.Mu.Unlock()
+
+			handleUsualMessage(room, conn, finalMsg)
 		case "ready_check":
 			handleReadyCheck(db, room, conn, msg.Username)
 		case "rate":
-			// todo не нужно
-			handleRating(room, msg)
+			handleRating(room, p)
 		}
 	}
 }
 
-func handleUsualMessage(room *structures.Room, conn *websocket.Conn, msg []byte) {
+func handleUsualMessage(room *structures.Room, conn *websocket.Conn, msg structures.Message) {
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		logger.Log.Errorln("Marshal error:", err)
+		return
+	}
+
 	for _, user := range room.Users {
-		if user.Connection != conn { // отправить сообщение всем пользователям в комнате, кроме отправителя
-			err := user.Connection.WriteMessage(websocket.TextMessage, msg)
-			if err != nil {
-				logger.Log.Errorln(err)
-			}
+		//if user.Connection != conn { // отправить сообщение всем пользователям в комнате, кроме отправителя
+		if err := user.Connection.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
+			logger.Log.Errorln(err)
 		}
+		//}
 	}
 }
 
@@ -95,9 +118,76 @@ func handleReadyCheck(db *sql.DB, room *structures.Room, conn *websocket.Conn, u
 	}
 }
 
-func handleRating(room *structures.Room, msg structures.Message) {
-	logger.Log.Traceln("i will place this info in db: ", msg)
-	//todo
+func handleRating(room *structures.Room, p []byte) {
+	var msg structures.RateMessage
+	err := json.Unmarshal(p, &msg)
+	if err != nil {
+		logger.Log.Traceln("Unmarshal message error: " + err.Error())
+		return
+	}
+
+	room.Mu.Lock()
+	defer room.Mu.Unlock()
+
+	var targetMsg *structures.Message
+	for i := range room.Messages {
+		if room.Messages[i].ID == msg.TargetMessageID {
+			targetMsg = &room.Messages[i]
+			break
+		}
+	}
+
+	if targetMsg == nil {
+		logger.Log.Warnf("Message %s not found", msg.TargetMessageID)
+		return
+	}
+
+	if targetMsg.Username == msg.Username {
+		logger.Log.Warnf("User %s tried to vote own message", msg.Username)
+		return
+	}
+
+	previousVote := targetMsg.Votes[msg.Username]
+	newVote := msg.Vote
+
+	switch previousVote {
+	case 1:
+		targetMsg.LikeCount--
+	case -1:
+		targetMsg.DislikeCount--
+	}
+
+	switch newVote {
+	case 1:
+		targetMsg.LikeCount++
+	case -1:
+		targetMsg.DislikeCount++
+	case 0:
+		delete(targetMsg.Votes, msg.Username)
+	default:
+		logger.Log.Warnf("Invalid vote value: %d", newVote)
+		return
+	}
+
+	if newVote != 0 {
+		targetMsg.Votes[msg.Username] = newVote
+	}
+
+	update := map[string]interface{}{
+		"type":         "vote_update",
+		"messageID":    targetMsg.ID,
+		"likeCount":    targetMsg.LikeCount,
+		"dislikeCount": targetMsg.DislikeCount,
+	}
+
+	logger.Log.Traceln("Updating vote update:", update)
+
+	msgBytes, _ := json.Marshal(update)
+	for _, user := range room.Users {
+		if err := user.Connection.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
+			logger.Log.Errorln("Broadcast error:", err)
+		}
+	}
 }
 
 func startDiscussion(db *sql.DB, room *structures.Room) {
