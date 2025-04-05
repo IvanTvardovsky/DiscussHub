@@ -89,6 +89,8 @@ type Message struct {
 	Timestamp    time.Time      `json:"timestamp"`
 	LikeCount    int            `json:"likeCount"`
 	DislikeCount int            `json:"dislikeCount"`
+	LikedBy      []string       `json:"likedBy"` // usernames
+	DislikedBy   []string       `json:"dislikedBy"`
 	Votes        map[string]int `json:"-"` // username -> vote (-1, 0, 1)
 	TempID       string         `json:"tempId,omitempty"`
 }

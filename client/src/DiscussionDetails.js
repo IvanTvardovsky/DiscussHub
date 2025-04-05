@@ -12,10 +12,15 @@ import {
     CircularProgress,
     useTheme,
     Paper,
-    Grid
+    Grid,
 } from '@mui/material';
 import { ArrowBack, Download, AccountTree } from '@mui/icons-material';
 import moment from 'moment';
+import {
+    ThumbUp as ThumbUpIcon,
+    ThumbDown as ThumbDownIcon,
+} from '@mui/icons-material';
+import Tooltip from '@mui/material/Tooltip';
 
 const DiscussionDetails = ({ discussionId, onBack }) => {
     const [data, setData] = useState(null);
@@ -233,9 +238,55 @@ const DiscussionDetails = ({ discussionId, onBack }) => {
                                                 </Typography>
                                             }
                                             secondary={
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {msg.content || <em>(системное сообщение)</em>}
-                                                </Typography>
+                                                <>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {msg.content || <em>(системное сообщение)</em>}
+                                                    </Typography>
+
+                                                    <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                                                        {msg.likeCount > 0 && (
+                                                            <Tooltip
+                                                                title={msg.likedBy.length > 0
+                                                                    ? `Лайкнули: ${msg.likedBy.join(', ')}`
+                                                                    : "Нет лайков"
+                                                                }
+                                                                arrow
+                                                            >
+                                                                <Chip
+                                                                    size="small"
+                                                                    icon={<ThumbUpIcon fontSize="small" />}
+                                                                    label={msg.likeCount}
+                                                                    sx={{
+                                                                        '& .MuiChip-icon': {
+                                                                            color: theme.palette.success.main
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </Tooltip>
+                                                        )}
+
+                                                        {msg.dislikeCount > 0 && (
+                                                            <Tooltip
+                                                                title={msg.dislikedBy.length > 0
+                                                                    ? `Дизлайкнули: ${msg.dislikedBy.join(', ')}`
+                                                                    : "Нет дизлайков"
+                                                                }
+                                                                arrow
+                                                            >
+                                                                <Chip
+                                                                    size="small"
+                                                                    icon={<ThumbDownIcon fontSize="small" />}
+                                                                    label={msg.dislikeCount}
+                                                                    sx={{
+                                                                        '& .MuiChip-icon': {
+                                                                            color: theme.palette.error.main
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </Tooltip>
+                                                        )}
+                                                    </Box>
+                                                </>
                                             }
                                         />
                                     </ListItem>

@@ -12,6 +12,19 @@ func SaveDiscussionHistory(db *sql.DB, room *structures.Room) {
 	room.Mu.Lock()
 	defer room.Mu.Unlock()
 
+	for i := range room.Messages {
+		msg := &room.Messages[i]
+		msg.LikedBy = []string{}
+		msg.DislikedBy = []string{}
+		for username, vote := range msg.Votes {
+			if vote == 1 {
+				msg.LikedBy = append(msg.LikedBy, username)
+			} else if vote == -1 {
+				msg.DislikedBy = append(msg.DislikedBy, username)
+			}
+		}
+	}
+
 	messagesJSON, err := json.Marshal(room.Messages)
 	if err != nil {
 		logger.Log.Errorln("Marshal error:", err)
