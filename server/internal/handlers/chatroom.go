@@ -155,6 +155,7 @@ func CreateChatroom(c *gin.Context, rooms *map[int]*structures.Room) {
 	if req.Mode == "personal" && req.SubType == "blitz" {
 		room.TopicID = req.Topic
 		room.SubtopicID = req.Subtopic
+		room.Duration = 10 * time.Minute
 	} else if req.Mode == "personal" && req.SubType == "free" {
 		room.CustomTopic = req.CustomTopic
 		room.CustomSubtopic = req.CustomSubtopic
