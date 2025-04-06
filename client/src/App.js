@@ -103,6 +103,8 @@ const App = () => {
             .then(data => {
                 const socketUrl = `ws://127.0.0.1:8080/ws/chat/${data.roomID}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(roomData.password)}`;
 
+                setSelectedDiscussionId(data.roomID);
+
                 connectToWebSocket(socketUrl, () => {
                     setCurrentView('chat');
                 });
@@ -198,6 +200,7 @@ const App = () => {
                         onUpdateRoomName={setRoomName}
                         onLeaveChat={handleLeaveChat}
                         setMessageHistory={setMessageHistory}
+                        selectedDiscussionId={selectedDiscussionId}
                     />
                 )}
                 {currentView === 'room' && (

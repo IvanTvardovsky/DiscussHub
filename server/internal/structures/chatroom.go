@@ -102,3 +102,9 @@ type RateMessage struct {
 	TargetMessageID string `json:"messageID"` // uuid
 	Vote            int    `json:"vote"`      // (-1, 0, 1)
 }
+
+type FinalRateMessage struct {
+	Type     string   `json:"type"`
+	Users    []string `json:"users"`
+	Criteria []string `json:"criteria"`
+}

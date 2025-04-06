@@ -88,7 +88,33 @@ func SendTimerUpdate(room *structures.Room, remaining time.Duration) {
 	sendToAll(room, msg)
 }
 
+func sendRateYourOpponents(room *structures.Room) {
+	var msg structures.FinalRateMessage
+	if room.Mode == "professional" {
+		msg = structures.FinalRateMessage{
+			Type:     "discussion_end",
+			Users:    room.Participants,
+			Criteria: []string{"professionalism", "arguments_quality", "politeness"}, //todo make const
+		}
+	} else {
+		msg = structures.FinalRateMessage{
+			Type:     "discussion_end",
+			Users:    room.Participants,
+			Criteria: []string{"politeness", "arguments_quality"}, //todo make const
+		}
+	}
+
+	messageToSend, _ := json.Marshal(msg)
+
+	for _, user := range room.Users {
+		logger.Log.Traceln("Sending message:", string(messageToSend))
+		user.Connection.WriteMessage(websocket.TextMessage, messageToSend)
+	}
+}
+
 func SendDiscussionEnd(room *structures.Room) {
+	sendRateYourOpponents(room)
+
 	msg := structures.Message{
 		Type:    "discussion_end",
 		Content: "Обсуждение закончено! Оцените ваших собеседников",
