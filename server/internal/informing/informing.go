@@ -92,15 +92,17 @@ func sendRateYourOpponents(room *structures.Room) {
 	var msg structures.FinalRateMessage
 	if room.Mode == "professional" {
 		msg = structures.FinalRateMessage{
-			Type:     "discussion_end",
-			Users:    room.Participants,
-			Criteria: []string{"professionalism", "arguments_quality", "politeness"}, //todo make const
+			DiscussionID: room.DiscussionID,
+			Type:         "discussion_end",
+			Users:        room.Participants,
+			Criteria:     []string{"professionalism", "arguments_quality", "politeness"}, //todo make const
 		}
 	} else {
 		msg = structures.FinalRateMessage{
-			Type:     "discussion_end",
-			Users:    room.Participants,
-			Criteria: []string{"politeness", "arguments_quality"}, //todo make const
+			DiscussionID: room.DiscussionID,
+			Type:         "discussion_end",
+			Users:        room.Participants,
+			Criteria:     []string{"professionalism", "politeness", "arguments_quality"}, //todo make const
 		}
 	}
 

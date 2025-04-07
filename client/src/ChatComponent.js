@@ -13,6 +13,7 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
     const [ratingCriteria, setRatingCriteria] = useState([]);
     const [isRatingSubmitted, setIsRatingSubmitted] = useState(false);
     const [error, setError] = useState(null);
+    const [discussionID, setDiscussionID] = useState(null)
 
     const criterionLabels = {
         professionalism: 'Профессионализм',
@@ -55,7 +56,11 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
                 case 'discussion_end':
                     setMessageHistory(prev => [...prev, message]);
                     setIsDiscussionActive(false);
-                    setIsChatLocked(true);
+                    setIsChatLocked(true)
+
+                    if (message.discussionID) {
+                        setDiscussionID(message.discussionID);
+                    }
 
                     if (message.users && message.criteria) {
                         setUsersToRate(message.users.filter(u => u !== currentUsername));
@@ -188,18 +193,18 @@ const ChatComponent = ({ socket, messageHistory, roomName, onLeaveChat, setMessa
                 throw new Error('Заполните все оценки перед отправкой');
             }
 
-            if (!selectedDiscussionId) {
+            if (!discussionID) {
                 throw new Error('Не удалось идентифицировать дискуссию');
             }
 
-            const response = await fetch('http://127.0.0.1:8080/api/ratings', {
+            const response = await fetch(`http://127.0.0.1:8080/rate/final?username=${currentUsername}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    discussionId: selectedDiscussionId,
+                    discussionId: discussionID,
                     ratings: ratingsData
                 })
             });

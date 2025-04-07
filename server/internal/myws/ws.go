@@ -243,7 +243,6 @@ func getThesesForSubtopic(subtopicID int) []string {
 
 // в логике таймера
 func discussionTimer(db *sql.DB, room *structures.Room) {
-	defer storage.SaveDiscussionHistory(db, room)
 	var reminderInterval time.Duration
 
 	switch {
@@ -265,6 +264,8 @@ func discussionTimer(db *sql.DB, room *structures.Room) {
 		case <-ticker.C:
 			remaining := room.Duration - time.Since(room.StartTime)
 			if remaining <= 0 {
+				room.DiscussionID = int(storage.SaveDiscussionHistory(db, room))
+
 				informing.SendDiscussionEnd(room)
 				return
 			}

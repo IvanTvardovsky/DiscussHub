@@ -55,6 +55,7 @@ type Room struct {
 
 	AssignedTheses []string          // назначенные тезисы для дискуссии
 	UserTheses     map[string]string // маппинг пользователь -> тезис
+	DiscussionID   int
 }
 
 type RoomForList struct {
@@ -104,7 +105,8 @@ type RateMessage struct {
 }
 
 type FinalRateMessage struct {
-	Type     string   `json:"type"`
-	Users    []string `json:"users"`
-	Criteria []string `json:"criteria"`
+	DiscussionID int      `json:"discussionID"`
+	Type         string   `json:"type"`
+	Users        []string `json:"users"`
+	Criteria     []string `json:"criteria"`
 }

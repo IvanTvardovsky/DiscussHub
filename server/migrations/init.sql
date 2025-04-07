@@ -29,3 +29,15 @@ CREATE TABLE discussions (
     description TEXT,
     purpose TEXT
 );
+
+CREATE TABLE IF NOT EXISTS ratings (
+    id SERIAL PRIMARY KEY,
+    discussion_id INT NOT NULL REFERENCES discussions(id) ON DELETE CASCADE,
+    rater_user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    rated_user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    professionalism INT NOT NULL CHECK (professionalism BETWEEN 1 AND 5),
+    arguments_quality INT NOT NULL CHECK (arguments_quality BETWEEN 1 AND 5),
+    politeness INT NOT NULL CHECK (politeness BETWEEN 1 AND 5),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (discussion_id, rater_user_id, rated_user_id)
+);
