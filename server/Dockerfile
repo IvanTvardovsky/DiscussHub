@@ -11,6 +11,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o awesomeChat ./main.go
 
 FROM alpine:latest
 
+RUN apk add --no-cache graphviz
+
 COPY --from=builder /app/awesomeChat .
 COPY ./config/ ./config/
 

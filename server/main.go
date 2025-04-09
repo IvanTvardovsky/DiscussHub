@@ -72,9 +72,9 @@ func main() {
 	router.GET("/discussion/:id/export/csv", AuthMiddleware(), func(c *gin.Context) {
 		handlers.GetDiscussionCSVByID(c, db)
 	})
-	//router.GET("/discussion/:id/export/graph", AuthMiddleware(), func(c *gin.Context) {
-	//	handlers.GetDiscussionByID(c, db)
-	//})
+	router.GET("/discussion/:id/export/graph", AuthMiddleware(), func(c *gin.Context) {
+		handlers.GetDiscussionGraphByID(c, db)
+	})
 	router.GET("/archive", AuthMiddleware(), func(c *gin.Context) {
 		handlers.GetArchives(c, db)
 	})
