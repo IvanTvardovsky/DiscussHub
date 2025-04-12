@@ -206,7 +206,7 @@ func SendDiscussionStart(room *structures.Room) {
 func SendUserReady(room *structures.Room, username string) {
 	msg := structures.Message{
 		Type:     "system",
-		Content:  fmt.Sprintf("User %s is ready to start!", username),
+		Content:  fmt.Sprintf("Пользователь %s готов начать!", username),
 		Username: "system",
 	}
 	sendToAll(room, msg)

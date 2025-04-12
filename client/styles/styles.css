@@ -1,6 +1,6 @@
 .message-container {
     display: flex;
-    flex-direction: column-reverse; /* Сообщения появляются снизу и уходят вверх */
+    flex-direction: column-reverse;
 }
 
 #chatContainer {
@@ -18,11 +18,11 @@
     flex-grow: 1;
     overflow-y: auto;
     display: flex;
-    flex-direction: column-reverse; /* Обратный порядок сообщений */
+    flex-direction: column-reverse;
 }
 
 .user-message {
-    background-color: #cce5ff; /* Цвет фона для сообщений пользователя */
+    background-color: #cce5ff;
     border-radius: 5px;
     padding: 5px;
     margin-bottom: 5px;

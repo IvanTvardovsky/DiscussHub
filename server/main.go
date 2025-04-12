@@ -1,6 +1,7 @@
 package main
 
 import (
+	"awesomeChat/internal/auth"
 	"awesomeChat/internal/handlers"
 	"awesomeChat/internal/myws"
 	"awesomeChat/internal/structures"
@@ -14,12 +15,6 @@ import (
 	"sort"
 	"time"
 )
-
-func AuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		logger.Log.Infoln("HI IM censorship")
-	}
-}
 
 func main() {
 	logger.Log.Infoln("Sleeping 10s for database to start...")
@@ -46,7 +41,7 @@ func main() {
 	logger.Log.Infoln("Serving handlers...")
 
 	router.POST("/login", func(c *gin.Context) {
-		handlers.Login(c, db /*, redisClient*/)
+		handlers.Login(c, db)
 	})
 	router.GET("/logout", func(c *gin.Context) {
 		//login(c, db) //todo
@@ -54,29 +49,35 @@ func main() {
 	router.POST("/register", func(c *gin.Context) {
 		handlers.Register(c, db)
 	})
-	router.GET("/ws/chat/:num", AuthMiddleware(), func(c *gin.Context) {
+	router.GET("/ws/chat/:num", auth.AuthMiddleware(), func(c *gin.Context) {
 		handlers.ConnectToChatroom(c, db, &rooms)
 	})
-	router.POST("/createChatroom/", AuthMiddleware(), func(c *gin.Context) {
+	router.POST("/createChatroom/", auth.AuthMiddleware(), func(c *gin.Context) {
 		handlers.CreateChatroom(c, &rooms)
 	})
 	router.GET("/roomUpdates", func(c *gin.Context) {
 		server.HandleConnections(c.Writer, c.Request, &rooms)
 	})
-	router.POST("/rate/final", AuthMiddleware(), func(c *gin.Context) {
+	router.POST("/rate/final", auth.AuthMiddleware(), func(c *gin.Context) {
 		handlers.RateOpponent(c, db)
 	})
-	router.GET("/discussion/:id", AuthMiddleware(), func(c *gin.Context) {
+	router.GET("/discussion/:id", auth.AuthMiddleware(), func(c *gin.Context) {
 		handlers.GetDiscussionByID(c, db)
 	})
-	router.GET("/discussion/:id/export/csv", AuthMiddleware(), func(c *gin.Context) {
+	router.GET("/discussion/:id/export/csv", auth.AuthMiddleware(), func(c *gin.Context) {
 		handlers.GetDiscussionCSVByID(c, db)
 	})
-	router.GET("/discussion/:id/export/graph", AuthMiddleware(), func(c *gin.Context) {
+	router.GET("/discussion/:id/export/graph", auth.AuthMiddleware(), func(c *gin.Context) {
 		handlers.GetDiscussionGraphByID(c, db)
 	})
-	router.GET("/archive", AuthMiddleware(), func(c *gin.Context) {
+	router.GET("/archive", auth.AuthMiddleware(), func(c *gin.Context) {
 		handlers.GetArchives(c, db)
+	})
+	router.GET("/profile", auth.AuthMiddleware(), func(c *gin.Context) {
+		handlers.GetProfile(c, db)
+	})
+	router.GET("/leaderboard", auth.AuthMiddleware(), func(c *gin.Context) {
+		handlers.GetLeaderboard(c, db)
 	})
 
 	go server.HandleMessages()

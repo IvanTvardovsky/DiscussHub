@@ -8,6 +8,7 @@ import {
     Card,
     CardContent,
     CardActions,
+    CardHeader,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -180,17 +181,17 @@ const RoomList = ({ onJoinRoom }) => {
             if (room.subType === 'blitz') {
                 return (
                     <>
-                        <Typography color="textSecondary">
+                        <Typography variant="body2" color="text.secondary" component="p">
                             Топик: {getTopicNameById(room.topic)}
                         </Typography>
-                        <Typography color="textSecondary">
+                        <Typography variant="body2" color="text.secondary" component="p">
                             Субтопик: {getSubtopicNameById(room.topic, room.subtopic)}
                         </Typography>
                     </>
                 );
             } else if (room.subType === 'free') {
                 return (
-                    <Typography color="textSecondary">
+                    <Typography variant="body2" color="text.secondary" component="p">
                         Тема: {room.customTopic}
                         {room.customSubtopic && ` / ${room.customSubtopic}`}
                     </Typography>
@@ -200,7 +201,7 @@ const RoomList = ({ onJoinRoom }) => {
 
         if (room.mode === 'professional') {
             return (
-                <Typography color="textSecondary">
+                <Typography variant="body2" color="text.secondary" component="p">
                     Цель: {room.purpose}
                 </Typography>
             );
@@ -219,7 +220,6 @@ const RoomList = ({ onJoinRoom }) => {
                 </Button>
             </Box>
 
-            {/* заготовка для фильтров */}
             <Box display="flex" gap={2} mb={2}>
                 <TextField
                     select
@@ -253,39 +253,90 @@ const RoomList = ({ onJoinRoom }) => {
                 </TextField>
             </Box>
 
-            {/* сетка карточек комнат */}
-            <Grid container spacing={2}>
+            <Grid container spacing={3} sx={{ padding: 3 }}>
                 {availableRooms.map((room) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={room.id}>
-                        <Card variant="outlined">
+                    <Grid
+                        item
+                        key={room.id}
+                        xs={12}
+                        sm={6}
+                        md={4}
+                        lg={3}
+                        xl={2}
+                        sx={{
+                            display: 'flex',
+                            minWidth: 300,
+                        }}
+                    >
+                        <Card
+                            variant="outlined"
+                            sx={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                borderRadius: 2,
+                                boxShadow: 3,
+                                transition: 'transform 0.3s, box-shadow 0.3s',
+                                '&:hover': {
+                                    transform: 'scale(1.03)',
+                                    boxShadow: 6
+                                }
+                            }}
+                        >
+                            <CardHeader
+                                title={
+                                    <Typography variant="h6" component="div">
+                                        {room.name}
+                                    </Typography>
+                                }
+                                subheader={
+                                    <>
+                                        {`ID: ${room.id} — ${room.open ? 'Открытая' : 'Закрытая'}`}
+                                        {room.discussionActive && " • Активная дискуссия"}
+                                    </>
+                                }
+                            />
                             <CardContent>
-                                <Typography variant="h6" gutterBottom>
-                                    {room.name}
-                                </Typography>
-                                <Typography variant="caption" display="block">
-                                    ID: {room.id} — {room.open ? 'Открытая' : 'Закрытая'}
-                                </Typography>
-                                <Typography variant="caption" display="block">
+                                <Typography variant="body2" color="text.secondary" component="p">
                                     Пользователи: {room.users}/{room.maxUsers}
                                 </Typography>
                                 {renderRoomTopic(room)}
                                 {room.duration > 0 && (
-                                    <Typography variant="caption" display="block">
+                                    <Typography variant="body2" color="text.secondary" component="p">
                                         Длительность: {room.duration} мин
                                     </Typography>
                                 )}
+                                {room.discussionActive && (
+                                    <Typography
+                                        variant="body2"
+                                        color="error.main"
+                                        component="p"
+                                        sx={{ mt: 1, fontWeight: 'bold' }}
+                                    >
+                                        Дискуссия уже началась
+                                    </Typography>
+                                )}
                             </CardContent>
-                            <CardActions>
-                                <Button size="small" onClick={() => handleJoinRoomClick(room)}>
-                                    Присоединиться
-                                </Button>
-                            </CardActions>
+
+                            {!room.discussionActive && (
+                                <CardActions>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        size="small"
+                                        onClick={() => handleJoinRoomClick(room)}
+                                    >
+                                        Присоединиться
+                                    </Button>
+                                </CardActions>
+                            )}
                         </Card>
                     </Grid>
                 ))}
             </Grid>
 
-            {/* диалог для прямого входа по ID */}
             <Dialog open={openDirectJoin} onClose={() => setOpenDirectJoin(false)}>
                 <DialogTitle>Вход по ID комнаты</DialogTitle>
                 <DialogContent>
@@ -319,7 +370,6 @@ const RoomList = ({ onJoinRoom }) => {
                 </DialogActions>
             </Dialog>
 
-            {/* диалог ввода пароля для закрытых комнат */}
             <Dialog open={openDialog} onClose={handleDialogClose}>
                 <DialogTitle>Введите пароль</DialogTitle>
                 <DialogContent>

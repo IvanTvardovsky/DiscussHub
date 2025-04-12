@@ -29,6 +29,11 @@ func ConnectToChatroom(c *gin.Context, db *sql.DB, rooms *map[int]*structures.Ro
 		return
 	}
 
+	if room.DiscussionActive {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Room already discussion active"})
+		return
+	}
+
 	if !room.Open && room.Password != password {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Wrong password"})
 		return

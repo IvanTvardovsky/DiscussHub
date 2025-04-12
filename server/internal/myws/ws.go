@@ -106,6 +106,9 @@ func handleUsualMessage(room *structures.Room, conn *websocket.Conn, msg structu
 }
 
 func handleReadyCheck(db *sql.DB, room *structures.Room, conn *websocket.Conn, username string) {
+	if _, ready := room.ReadyUsers[username]; room.DiscussionActive || ready {
+		return
+	}
 	room.Mu.Lock()
 	room.ReadyUsers[username] = true
 	room.Mu.Unlock()
