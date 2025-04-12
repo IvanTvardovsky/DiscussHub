@@ -13,16 +13,85 @@ import {
     Avatar,
     Divider
 } from '@mui/material';
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { IconButton, Tooltip } from '@mui/material';
+
+const topics = [
+    { id: 1, title: 'Технологии', icon: '💻' },
+    { id: 2, title: 'Здоровье и благополучие', icon: '🏥' },
+    { id: 3, title: 'Образование и саморазвитие', icon: '📚' },
+    { id: 4, title: 'Искусство и культура', icon: '🎨' },
+    { id: 5, title: 'Путешествия и приключения', icon: '✈️' },
+    { id: 6, title: 'Экология и устойчивое развитие', icon: '🌱' }
+];
+
+const subtopics = {
+    1: [
+        { id: 101, title: 'Как ИИ влияет на рынок труда?' },
+        { id: 102, title: 'Этика в разработке новых технологий' },
+        { id: 103, title: 'Развитие квантовых вычислений' },
+        { id: 104, title: 'Интернет вещей (IoT)' },
+        { id: 105, title: 'Кибербезопасность' }
+    ],
+    2: [
+        { id: 201, title: 'Здоровое питание' },
+        { id: 202, title: 'Физическая активность' },
+        { id: 203, title: 'Психическое здоровье' },
+        { id: 204, title: 'Медитация и релаксация' },
+        { id: 205, title: 'Профилактика заболеваний' }
+    ],
+    3: [
+        { id: 301, title: 'Онлайн-курсы' },
+        { id: 302, title: 'Чтение и литература' },
+        { id: 303, title: 'Языковое обучение' },
+        { id: 304, title: 'Навыки будущего' },
+        { id: 305, title: 'Образовательные технологии' }
+    ],
+    4: [
+        { id: 401, title: 'Современное искусство' },
+        { id: 402, title: 'Классическая музыка' },
+        { id: 403, title: 'Кино и театр' },
+        { id: 404, title: 'Литература и поэзия' },
+        { id: 405, title: 'Культурное наследие' }
+    ],
+    5: [
+        { id: 501, title: 'Популярные направления' },
+        { id: 502, title: 'Культурные путешествия' },
+        { id: 503, title: 'Приключенческий туризм' },
+        { id: 504, title: 'Путешествия с семьей' },
+        { id: 505, title: 'Фотография путешествий' }
+    ],
+    6: [
+        { id: 601, title: 'Возобновляемая энергия' },
+        { id: 602, title: 'Эко-инициативы' },
+        { id: 603, title: 'Зеленые технологии' },
+        { id: 604, title: 'Сохранение биоразнообразия' },
+        { id: 605, title: 'Устойчивое потребление' }
+    ]
+};
+
+const getTopicNameById = (topicId) => {
+    const topic = topics.find((t) => t.id === topicId);
+    return topic ? `${topic.icon} ${topic.title}` : 'N/A';
+};
+
+const getSubtopicNameById = (topicId, subtopicId) => {
+    if (!topicId || !subtopicId) return 'N/A';
+    const group = subtopics[topicId];
+    if (!group) return 'N/A';
+    const sub = group.find((s) => s.id === subtopicId);
+    return sub ? sub.title : 'N/A';
+};
 
 const ChatComponent = ({
-                           socket,
-                           messageHistory,
-                           roomName,
-                           onLeaveChat,
-                           setMessageHistory,
-                           onUpdateRoomName,
-                           selectedDiscussionId
-                       }) => {
+     socket,
+     messageHistory,
+     roomName,
+     onLeaveChat,
+     setMessageHistory,
+     onUpdateRoomName,
+     selectedDiscussionId
+    }) => {
     const [messageInput, setMessageInput] = useState('');
     const [isDiscussionActive, setIsDiscussionActive] = useState(false);
     const [showRatingForm, setShowRatingForm] = useState(false);
@@ -35,6 +104,8 @@ const ChatComponent = ({
     const [isRatingSubmitted, setIsRatingSubmitted] = useState(false);
     const [error, setError] = useState(null);
     const [discussionID, setDiscussionID] = useState(null);
+    const [roomDetails, setRoomDetails] = useState(null);
+    const [isRoomDetailsCollapsed, setIsRoomDetailsCollapsed] = useState(false);
 
     const criterionLabels = {
         professionalism: 'Профессионализм',
@@ -47,6 +118,24 @@ const ChatComponent = ({
             setMessageHistory(prev => prev.filter(m => !m.content.includes('Type '+' to start')));
         }
     }, [isDiscussionActive, setMessageHistory]);
+
+    useEffect(() => {
+        const fetchRoomDetails = async () => {
+            try {
+                const response = await fetch(
+                    `http://127.0.0.1:8080/room/${selectedDiscussionId}/details`
+                );
+                if (!response.ok) throw new Error('Ошибка загрузки данных комнаты');
+                const data = await response.json();
+                setRoomDetails(data);
+            } catch (error) {
+                setError(error.message);
+                setRoomDetails(null);
+            }
+        };
+
+        if (selectedDiscussionId) fetchRoomDetails();
+    }, [selectedDiscussionId]);
 
     useEffect(() => {
         if (!socket) return;
@@ -255,16 +344,144 @@ const ChatComponent = ({
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     mb: 2,
-                    px: 1
+                    px: 1,
+                    gap: 2
                 }}
             >
-                <Typography variant="h5" component="h1">
-                    {roomName}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Tooltip title={isRoomDetailsCollapsed ? "Показать детали" : "Скрыть детали"}>
+                        <IconButton
+                            onClick={() => setIsRoomDetailsCollapsed(!isRoomDetailsCollapsed)}
+                            size="small"
+                        >
+                            {isRoomDetailsCollapsed ? <ExpandMore /> : <ExpandLess />}
+                        </IconButton>
+                    </Tooltip>
+                    <Typography variant="h5" component="h1">
+                        {roomName}
+                    </Typography>
+                </Box>
+
                 <Button variant="contained" color="secondary" onClick={onLeaveChat}>
                     Покинуть чат
                 </Button>
             </Box>
+
+            {!isRoomDetailsCollapsed && roomDetails && (
+                <Paper elevation={3} sx={{
+                    p: 2,
+                    mb: 2,
+                    borderRadius: 2,
+                    backgroundColor: 'background.paper',
+                    overflow: 'hidden',
+                    transition: '0.3s all'
+                }}>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                            {roomDetails.mode === 'personal' ? (
+                                roomDetails.subType === 'blitz' ? (
+                                    <>
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            <strong>Топик:</strong> {getTopicNameById(roomDetails.topic)}
+                                        </Typography>
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            <strong>Субтопик:</strong> {getSubtopicNameById(roomDetails.topic, roomDetails.subtopic)}
+                                        </Typography>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            <strong>Тема:</strong> {roomDetails.customTopic}
+                                        </Typography>
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            <strong>Подтема:</strong> {roomDetails.customSubtopic}
+                                        </Typography>
+                                    </>
+                                )
+                            ) : (
+                                <>
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                        <strong>Цель:</strong> {roomDetails.purpose}
+                                    </Typography>
+                                    {roomDetails.keyQuestions?.length > 0 && (
+                                        <Box sx={{ mt: 1 }}>
+                                            <Typography variant="subtitle2" color="text.secondary">
+                                                <strong>Ключевые вопросы:</strong>
+                                            </Typography>
+                                            <Box sx={{
+                                                maxHeight: 150,
+                                                overflowY: 'auto',
+                                                bgcolor: 'background.default',
+                                                borderRadius: 1,
+                                                p: 1,
+                                                mt: 0.5
+                                            }}>
+                                                {roomDetails.keyQuestions.map((q, index) => (
+                                                    <Typography
+                                                        key={index}
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                        sx={{
+                                                            whiteSpace: 'pre-wrap',
+                                                            wordBreak: 'break-word',
+                                                            mb: 0.5
+                                                        }}
+                                                    >
+                                                        • {q}
+                                                    </Typography>
+                                                ))}
+                                            </Box>
+                                        </Box>
+                                    )}
+                                </>
+                            )}
+
+                            {roomDetails.description && (
+                                <Box sx={{ mt: 1 }}>
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                        <strong>Описание:</strong>
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                        sx={{
+                                            whiteSpace: 'pre-wrap',
+                                            wordBreak: 'break-word',
+                                            maxHeight: 100,
+                                            overflowY: 'auto',
+                                            bgcolor: 'background.default',
+                                            borderRadius: 1,
+                                            p: 1
+                                        }}
+                                    >
+                                        {roomDetails.description}
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                {roomDetails.tags?.length > 0 && (
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                        <strong>Метки:</strong> {roomDetails.tags.join(', ')}
+                                    </Typography>
+                                )}
+
+                                {roomDetails.duration > 0 && (
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                        <strong>Длительность:</strong> {roomDetails.duration} минут
+                                    </Typography>
+                                )}
+
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    <strong>Максимум пользователей:</strong> {roomDetails.maxUsers}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </Paper>
+            )}
 
             <Paper
                 elevation={4}

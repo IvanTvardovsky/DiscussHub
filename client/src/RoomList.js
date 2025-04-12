@@ -191,10 +191,14 @@ const RoomList = ({ onJoinRoom }) => {
                 );
             } else if (room.subType === 'free') {
                 return (
-                    <Typography variant="body2" color="text.secondary" component="p">
-                        Тема: {room.customTopic}
-                        {room.customSubtopic && ` / ${room.customSubtopic}`}
-                    </Typography>
+                    <>
+                        <Typography variant="body2" color="text.secondary" component="p">
+                            Тема: {room.customTopic}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" component="p">
+                            Подтема: {room.customSubtopic}
+                        </Typography>
+                    </>
                 );
             }
         }

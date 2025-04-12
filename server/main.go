@@ -79,6 +79,9 @@ func main() {
 	router.GET("/leaderboard", auth.AuthMiddleware(), func(c *gin.Context) {
 		handlers.GetLeaderboard(c, db)
 	})
+	router.GET("/room/:id/details", auth.AuthMiddleware(), func(c *gin.Context) {
+		handlers.GetRoomDetails(c, &rooms)
+	})
 
 	go server.HandleMessages()
 	go func() {

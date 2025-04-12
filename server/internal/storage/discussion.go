@@ -49,7 +49,7 @@ func SaveDiscussionHistory(db *sql.DB, room *structures.Room) int64 {
 		room.ID,
 		room.Mode,
 		room.SubType,
-		room.Duration,
+		int64(room.Duration.Seconds()),
 		room.StartTime,
 		time.Now(),
 		messagesJSON,

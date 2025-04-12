@@ -78,6 +78,8 @@ const App = () => {
     const handleJoinRoom = (roomId, password) => {
         const username = localStorage.getItem('username');
         const socketUrl = `ws://127.0.0.1:8080/ws/chat/${roomId}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+        setSelectedDiscussionId(roomId);
+
         connectToWebSocket(socketUrl, () => {
             setCurrentView('chat');
         });
