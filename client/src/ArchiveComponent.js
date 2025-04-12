@@ -9,7 +9,9 @@ import {
     Pagination,
     Skeleton,
     useTheme,
-    styled
+    styled,
+    Tooltip,
+    Popover
 } from '@mui/material';
 import { QuestionAnswer, People, Public, Lock } from '@mui/icons-material';
 
@@ -21,6 +23,56 @@ const ArchiveCard = styled(Card)(({ theme }) => ({
         boxShadow: theme.shadows[4],
     },
 }));
+
+const TruncatedText = ({ text, maxLength, variant = 'body2' }) => {
+    const [anchorEl, setAnchorEl] = useState(null);
+    const needsTruncation = text?.length > maxLength;
+
+    const handleClick = (event) => {
+        if (needsTruncation) {
+            setAnchorEl(event.currentTarget);
+        }
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    return (
+        <>
+            <Tooltip title={needsTruncation ? 'Нажмите для полного текста' : ''}>
+                <Typography
+                    variant={variant}
+                    color="text.secondary"
+                    onClick={handleClick}
+                    sx={{
+                        cursor: needsTruncation ? 'pointer' : 'default',
+                        display: 'inline-block',
+                        maxWidth: '100%',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                    }}
+                >
+                    {needsTruncation ? `${text.slice(0, maxLength)}...` : text}
+                </Typography>
+            </Tooltip>
+
+            <Popover
+                open={Boolean(anchorEl)}
+                anchorEl={anchorEl}
+                onClose={handleClose}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+            >
+                <Typography sx={{ p: 2, maxWidth: 400 }}>{text}</Typography>
+            </Popover>
+        </>
+    );
+};
+
 
 const ArchiveComponent = ({ onSelectDiscussion }) => {
     const [archiveData, setArchiveData] = useState({ data: [], total: 0 });
@@ -66,13 +118,14 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
                         Ключевые вопросы:
                     </Typography>
                     {item.key_questions?.map((q, i) => (
-                        <Chip
-                            key={i}
-                            label={q}
-                            size="small"
-                            sx={{ m: 0.5 }}
-                            color="primary"
-                        />
+                        <Tooltip key={i} title={q}>
+                            <Chip
+                                label={q.length > 25 ? `${q.slice(0, 25)}...` : q}
+                                size="small"
+                                sx={{ m: 0.5 }}
+                                color="primary"
+                            />
+                        </Tooltip>
                     ))}
                     <div style={{ marginTop: 8 }}>
                         {item.tags?.map((tag, i) => (
@@ -92,24 +145,28 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
         if (item.subtype === 'blitz') {
             return (
                 <>
-                    <Typography variant="body2" color="text.secondary">
-                        Тема: {item.topic}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Подтема: {item.subtopic}
-                    </Typography>
+                    <TruncatedText
+                        text={`Тема: ${item.topic}`}
+                        maxLength={35}
+                    />
+                    <TruncatedText
+                        text={`Подтема: ${item.subtopic}`}
+                        maxLength={35}
+                    />
                 </>
             );
         }
 
         return (
             <>
-                <Typography variant="body2" color="text.secondary">
-                    Своя тема: {item.custom_topic}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    Своя подтема: {item.custom_subtopic}
-                </Typography>
+                <TruncatedText
+                    text={`Своя тема: ${item.custom_topic}`}
+                    maxLength={35}
+                />
+                <TruncatedText
+                    text={`Своя подтема: ${item.custom_subtopic}`}
+                    maxLength={35}
+                />
             </>
         );
     };

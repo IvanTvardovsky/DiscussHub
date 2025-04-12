@@ -13,6 +13,8 @@ import {
     useTheme,
     Paper,
     Grid,
+    Tooltip,
+    Popover
 } from '@mui/material';
 import { ArrowBack, Download, AccountTree } from '@mui/icons-material';
 import moment from 'moment';
@@ -20,11 +22,12 @@ import {
     ThumbUp as ThumbUpIcon,
     ThumbDown as ThumbDownIcon,
 } from '@mui/icons-material';
-import Tooltip from '@mui/material/Tooltip';
 
 const DiscussionDetails = ({ discussionId, onBack }) => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [popoverAnchor, setPopoverAnchor] = useState(null);
+    const [popoverContent, setPopoverContent] = useState('');
     const theme = useTheme();
 
     useEffect(() => {
@@ -46,6 +49,16 @@ const DiscussionDetails = ({ discussionId, onBack }) => {
 
     const handleExport = (type) => {
         window.open(`http://localhost:8080/discussion/${discussionId}/export/${type}`, '_blank');
+    };
+
+    const handleShowFullText = (event, content) => {
+        setPopoverAnchor(event.currentTarget);
+        setPopoverContent(content);
+    };
+
+    const handlePopoverClose = () => {
+        setPopoverAnchor(null);
+        setPopoverContent('');
     };
 
     if (loading) {
@@ -156,7 +169,21 @@ const DiscussionDetails = ({ discussionId, onBack }) => {
                                 <strong>Длительность:</strong> {data.duration}
                             </Typography>
                             <Typography variant="body2">
-                                <strong>Цель:</strong> {data.purpose}
+                                <strong>Цель:</strong>
+                                <Tooltip title="Кликните для просмотра полного текста">
+                                    <span
+                                        onClick={(e) => handleShowFullText(e, data.purpose)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            textDecoration: 'underline dotted',
+                                            marginLeft: 4
+                                        }}
+                                    >
+                                        {data.purpose.length > 50
+                                            ? `${data.purpose.substring(0, 50)}...`
+                                            : data.purpose}
+                                    </span>
+                                </Tooltip>
                             </Typography>
                         </Box>
 
@@ -168,7 +195,39 @@ const DiscussionDetails = ({ discussionId, onBack }) => {
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                     {data.key_questions.map((q, i) => (
-                                        <Chip key={i} label={q} size="small" />
+                                        <Chip
+                                            key={i}
+                                            label={q}
+                                            size="small"
+                                            onClick={(e) => handleShowFullText(e, q)}
+                                            sx={{
+                                                maxWidth: 200,
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                cursor: 'pointer'
+                                            }}
+                                        />
+                                    ))}
+                                </Box>
+                            </>
+                        )}
+
+                        {data.tags?.length > 0 && (
+                            <>
+                                <Divider sx={{ my: 2 }} />
+                                <Typography variant="subtitle1" gutterBottom>
+                                    Метки
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                    {data.tags.map((tag, i) => (
+                                        <Chip
+                                            key={i}
+                                            label={tag}
+                                            size="small"
+                                            color="secondary"
+                                            variant="outlined"
+                                        />
                                     ))}
                                 </Box>
                             </>
@@ -296,6 +355,32 @@ const DiscussionDetails = ({ discussionId, onBack }) => {
                     </Paper>
                 </Grid>
             </Grid>
+
+            <Popover
+                open={Boolean(popoverAnchor)}
+                anchorEl={popoverAnchor}
+                onClose={handlePopoverClose}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                }}
+                sx={{
+                    '& .MuiPopover-paper': {
+                        maxWidth: '400px',
+                        maxHeight: '300px',
+                        overflow: 'auto',
+                        p: 1.5
+                    }
+                }}
+            >
+                <Typography variant="body2">
+                    {popoverContent}
+                </Typography>
+            </Popover>
         </Box>
     );
 };
