@@ -245,7 +245,7 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
                                                     )}
                                                     <People fontSize="small" sx={{ ml: 'auto' }} />
                                                     <Typography variant="caption">
-                                                        {item.participants?.length || 0}
+                                                        {item.participants_count || 0}
                                                     </Typography>
                                                 </div>
 

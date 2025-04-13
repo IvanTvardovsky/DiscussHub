@@ -134,7 +134,8 @@ func GetArchives(c *gin.Context, db *sql.DB) {
             subtopic_id,
             custom_topic, 
             custom_subtopic,
-            public
+            public,
+            jsonb_array_length(participants) as participants_count
         FROM discussions
         WHERE public = true OR participants @> jsonb_build_array($1::text)
         ORDER BY end_time DESC
@@ -167,6 +168,7 @@ func GetArchives(c *gin.Context, db *sql.DB) {
 			&item.CustomTopic,
 			&item.CustomSubtopic,
 			&item.Public,
+			&item.ParticipantsCount,
 		)
 
 		if err != nil {
