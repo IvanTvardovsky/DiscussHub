@@ -11,9 +11,12 @@ import {
     useTheme,
     styled,
     Tooltip,
-    Popover
+    Popover,
+    Collapse,
+    IconButton,
+    Box
 } from '@mui/material';
-import { QuestionAnswer, People, Public, Lock } from '@mui/icons-material';
+import { QuestionAnswer, People, Public, Lock, ExpandMore, ExpandLess } from '@mui/icons-material';
 
 const ArchiveCard = styled(Card)(({ theme }) => ({
     transition: 'transform 0.2s',
@@ -22,6 +25,7 @@ const ArchiveCard = styled(Card)(({ theme }) => ({
         transform: 'translateY(-4px)',
         boxShadow: theme.shadows[4],
     },
+    position: 'relative',
 }));
 
 const TruncatedText = ({ text, maxLength, variant = 'body2' }) => {
@@ -73,42 +77,8 @@ const TruncatedText = ({ text, maxLength, variant = 'body2' }) => {
     );
 };
 
-
-const ArchiveComponent = ({ onSelectDiscussion }) => {
-    const [archiveData, setArchiveData] = useState({ data: [], total: 0 });
-    const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
-    const [limit] = useState(9);
+const ExpandableCardContent = ({ item, onToggle, isExpanded }) => {
     const theme = useTheme();
-
-    useEffect(() => {
-        const fetchArchive = async () => {
-            try {
-                const username = localStorage.getItem('username');
-                if (!username) {
-                    console.error('Имя пользователя не найдено');
-                    setLoading(false);
-                    return;
-                }
-
-                const response = await fetch(
-                    `http://localhost:8080/archive?username=${encodeURIComponent(username)}&page=${page}&limit=${limit}`
-                );
-
-                if (!response.ok) throw new Error('Ошибка запроса');
-
-                const data = await response.json();
-                setArchiveData(data);
-            } catch (error) {
-                console.error('Ошибка загрузки архива:', error);
-                setArchiveData({ data: [], total: 0 });
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchArchive();
-    }, [page, limit]);
 
     const renderContent = (item) => {
         if (item.mode === 'professional') {
@@ -172,6 +142,130 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
     };
 
     return (
+        <CardContent sx={{ pb: '40px!important' }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 12
+            }}>
+                <Typography variant="h6" component="div">
+                    {item.name}
+                </Typography>
+                {item.public ? (
+                    <Public fontSize="small" color="success" />
+                ) : (
+                    <Lock fontSize="small" color="action" />
+                )}
+            </div>
+
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 12
+            }}>
+            </div>
+
+            <Collapse in={isExpanded} collapsedSize={100}>
+                {renderContent(item)}
+            </Collapse>
+
+            <Box sx={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                textAlign: 'center',
+                background: `linear-gradient(to top, ${theme.palette.background.paper} 30%, transparent)`,
+                pt: 1,
+                pb: 1
+            }}>
+                <IconButton
+                    size="small"
+                    onClick={onToggle}
+                    sx={{
+                        backgroundColor: theme.palette.background.paper,
+                        boxShadow: 1,
+                        '&:hover': {
+                            backgroundColor: theme.palette.action.hover
+                        }
+                    }}
+                >
+                    {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
+            </Box>
+        </CardContent>
+    );
+};
+
+const ExpandableArchiveCard = ({ item, onSelectDiscussion }) => {
+    const theme = useTheme(); // Добавляем хук useTheme
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const handleToggle = (e) => {
+        e.stopPropagation();
+        setIsExpanded(!isExpanded);
+    };
+
+    return (
+        <ArchiveCard
+            onClick={() => onSelectDiscussion(item.id)}
+            sx={{
+                borderLeft: `4px solid ${
+                    item.mode === 'professional'
+                        ? theme.palette.primary.main
+                        : theme.palette.secondary.main
+                }`
+            }}
+        >
+            <ExpandableCardContent
+                item={item}
+                isExpanded={isExpanded}
+                onToggle={handleToggle}
+            />
+        </ArchiveCard>
+    );
+};
+
+
+const ArchiveComponent = ({ onSelectDiscussion }) => {
+    const [archiveData, setArchiveData] = useState({ data: [], total: 0 });
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [limit] = useState(9);
+    const theme = useTheme();
+
+    useEffect(() => {
+        const fetchArchive = async () => {
+            try {
+                const username = localStorage.getItem('username');
+                if (!username) {
+                    console.error('Имя пользователя не найдено');
+                    setLoading(false);
+                    return;
+                }
+
+                const response = await fetch(
+                    `http://localhost:8080/archive?username=${encodeURIComponent(username)}&page=${page}&limit=${limit}`
+                );
+
+                if (!response.ok) throw new Error('Ошибка запроса');
+
+                const data = await response.json();
+                setArchiveData(data);
+            } catch (error) {
+                console.error('Ошибка загрузки архива:', error);
+                setArchiveData({ data: [], total: 0 });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchArchive();
+    }, [page, limit]);
+
+    return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             <Typography variant="h4" gutterBottom sx={{
                 display: 'flex',
@@ -193,68 +287,18 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
                 </Grid>
             ) : (
                 <>
-                    {archiveData.data.length > 0 ? (
+                {archiveData.data.length > 0 ? (
                         <>
-                            <Grid container spacing={3}>
-                                {archiveData.data.map((item) => (
-                                    <Grid item xs={12} sm={6} md={4} key={item.id}>
-                                        <ArchiveCard
-                                            sx={{
-                                                borderLeft: `4px solid ${
-                                                    item.mode === 'professional'
-                                                        ? theme.palette.primary.main
-                                                        : theme.palette.secondary.main
-                                                }`
-                                            }}
-                                            onClick={() => onSelectDiscussion(item.id)}
-                                        >
-                                            <CardContent>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    marginBottom: 12
-                                                }}>
-                                                    <Typography variant="h6" component="div">
-                                                        {item.name}
-                                                    </Typography>
-                                                    {item.public ? (
-                                                        <Public fontSize="small" color="success" />
-                                                    ) : (
-                                                        <Lock fontSize="small" color="action" />
-                                                    )}
-                                                </div>
-
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 8,
-                                                    marginBottom: 12
-                                                }}>
-                                                    <Chip
-                                                        label={item.mode === 'professional' ? 'Проф.' : 'Личная'}
-                                                        color={item.mode === 'professional' ? 'primary' : 'secondary'}
-                                                        size="small"
-                                                    />
-                                                    {item.mode === 'personal' && (
-                                                        <Chip
-                                                            label={item.subtype === 'blitz' ? 'Блиц' : 'Свободная'}
-                                                            variant="outlined"
-                                                            size="small"
-                                                        />
-                                                    )}
-                                                    <People fontSize="small" sx={{ ml: 'auto' }} />
-                                                    <Typography variant="caption">
-                                                        {item.participants_count || 0}
-                                                    </Typography>
-                                                </div>
-
-                                                {renderContent(item)}
-                                            </CardContent>
-                                        </ArchiveCard>
-                                    </Grid>
-                                ))}
-                            </Grid>
+                        <Grid container spacing={3}>
+                            {archiveData.data.map((item) => (
+                                <Grid item xs={12} sm={6} md={4} key={item.id}>
+                                    <ExpandableArchiveCard
+                                        item={item}
+                                        onSelectDiscussion={onSelectDiscussion}
+                                    />
+                                </Grid>
+                            ))}
+                        </Grid>
 
                             <Pagination
                                 count={Math.ceil(archiveData.total / limit)}
