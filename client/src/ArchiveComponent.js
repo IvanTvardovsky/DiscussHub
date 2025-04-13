@@ -9,9 +9,11 @@ import {
     Pagination,
     Skeleton,
     useTheme,
-    styled
+    styled,
+    IconButton,
+    Collapse
 } from '@mui/material';
-import { QuestionAnswer, People, Public, Lock } from '@mui/icons-material';
+import { QuestionAnswer, People, Public, Lock, ExpandMore, ExpandLess } from '@mui/icons-material';
 
 const ArchiveCard = styled(Card)(({ theme }) => ({
     transition: 'transform 0.2s',
@@ -22,6 +24,9 @@ const ArchiveCard = styled(Card)(({ theme }) => ({
     },
 }));
 
+const ExpandButton = styled(IconButton)(({ theme }) => ({
+    marginLeft: 'auto',
+}));
 
 const ArchiveComponent = ({ onSelectDiscussion }) => {
     const [archiveData, setArchiveData] = useState({ data: [], total: 0 });
@@ -29,6 +34,7 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
     const [page, setPage] = useState(1);
     const [limit] = useState(9);
     const theme = useTheme();
+    const [expandedItems, setExpandedItems] = useState({});
 
     useEffect(() => {
         const fetchArchive = async () => {
@@ -59,11 +65,18 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
         fetchArchive();
     }, [page, limit]);
 
+    const toggleExpand = (id) => {
+        setExpandedItems((prev) => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
+    };
+
     const renderContent = (item) => {
         if (item.mode === 'professional') {
             return (
                 <>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <Typography variant="subtitle2" color="text.secondary" fontWeight="bold" gutterBottom>
                         Ключевые вопросы:
                     </Typography>
                     {item.key_questions?.map((q, i) => (
@@ -75,17 +88,18 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
                             color="primary"
                         />
                     ))}
-                    <div style={{ marginTop: 8 }}>
-                        {item.tags?.map((tag, i) => (
-                            <Chip
-                                key={i}
-                                label={tag}
-                                size="small"
-                                sx={{ m: 0.5 }}
-                                variant="outlined"
-                            />
-                        ))}
-                    </div>
+                    <Typography variant="subtitle2" color="text.secondary" fontWeight="bold" gutterBottom sx={{ mt: 1 }}>
+                        Метки:
+                    </Typography>
+                    {item.tags?.map((tag, i) => (
+                        <Chip
+                            key={i}
+                            label={tag}
+                            size="small"
+                            sx={{ m: 0.5 }}
+                            variant="outlined"
+                        />
+                    ))}
                 </>
             );
         }
@@ -94,10 +108,10 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
             return (
                 <>
                     <Typography variant="body2" color="text.secondary">
-                        Тема: {item.topic}
+                        <span style={{ fontWeight: 'bold' }}>Тема:</span> {item.topic}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Подтема: {item.subtopic}
+                        <span style={{ fontWeight: 'bold' }}>Подтема:</span> {item.subtopic}
                     </Typography>
                 </>
             );
@@ -106,10 +120,10 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
         return (
             <>
                 <Typography variant="body2" color="text.secondary">
-                    Своя тема: {item.custom_topic}
+                    <span style={{ fontWeight: 'bold' }}>Своя тема:</span> {item.custom_topic}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Своя подтема: {item.custom_subtopic}
+                    <span style={{ fontWeight: 'bold' }}>Своя подтема:</span> {item.custom_subtopic}
                 </Typography>
             </>
         );
@@ -140,64 +154,81 @@ const ArchiveComponent = ({ onSelectDiscussion }) => {
                     {archiveData.data.length > 0 ? (
                         <>
                             <Grid container spacing={3}>
-                                {archiveData.data.map((item) => (
-                                    <Grid item xs={12} sm={6} md={4} key={item.id}>
-                                        <ArchiveCard
-                                            sx={{
-                                                borderLeft: `4px solid ${
-                                                    item.mode === 'professional'
-                                                        ? theme.palette.primary.main
-                                                        : theme.palette.secondary.main
-                                                }`
-                                            }}
-                                            onClick={() => onSelectDiscussion(item.id)}
-                                        >
-                                            <CardContent>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    marginBottom: 12
-                                                }}>
-                                                    <Typography variant="h6" component="div">
-                                                        {item.name}
-                                                    </Typography>
-                                                    {item.public ? (
-                                                        <Public fontSize="small" color="success" />
-                                                    ) : (
-                                                        <Lock fontSize="small" color="action" />
-                                                    )}
-                                                </div>
+                                {archiveData.data.map((item) => {
+                                    const isExpanded = expandedItems[item.id] || false;
+                                    return (
+                                        <Grid item xs={12} sm={6} md={4} key={item.id}>
+                                            <ArchiveCard
+                                                sx={{
+                                                    borderLeft: `4px solid ${
+                                                        item.mode === 'professional'
+                                                            ? theme.palette.primary.main
+                                                            : theme.palette.secondary.main
+                                                    }`
+                                                }}
+                                            >
+                                                <CardContent
+                                                    onClick={() => onSelectDiscussion(item.id)}
+                                                    sx={{ paddingBottom: 0 }}
+                                                >
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        marginBottom: 12
+                                                    }}>
+                                                        <Typography variant="h6" component="div">
+                                                            {item.name}
+                                                        </Typography>
+                                                        {item.public ? (
+                                                            <Public fontSize="small" color="success" />
+                                                        ) : (
+                                                            <Lock fontSize="small" color="action" />
+                                                        )}
+                                                    </div>
 
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 8,
-                                                    marginBottom: 12
-                                                }}>
-                                                    <Chip
-                                                        label={item.mode === 'professional' ? 'Проф.' : 'Личная'}
-                                                        color={item.mode === 'professional' ? 'primary' : 'secondary'}
-                                                        size="small"
-                                                    />
-                                                    {item.mode === 'personal' && (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 8,
+                                                        marginBottom: 12
+                                                    }}>
                                                         <Chip
-                                                            label={item.subtype === 'blitz' ? 'Блиц' : 'Свободная'}
-                                                            variant="outlined"
+                                                            label={item.mode === 'professional' ? 'Проф.' : 'Личная'}
+                                                            color={item.mode === 'professional' ? 'primary' : 'secondary'}
                                                             size="small"
                                                         />
-                                                    )}
-                                                    <People fontSize="small" sx={{ ml: 'auto' }} />
-                                                    <Typography variant="caption">
-                                                        {item.participants?.length || 0}
-                                                    </Typography>
-                                                </div>
+                                                        {item.mode === 'personal' && (
+                                                            <Chip
+                                                                label={item.subtype === 'blitz' ? 'Блиц' : 'Свободная'}
+                                                                variant="outlined"
+                                                                size="small"
+                                                            />
+                                                        )}
+                                                        <People fontSize="small" sx={{ ml: 'auto' }} />
+                                                        <Typography variant="caption">
+                                                            {item.participants_count || 0}
+                                                        </Typography>
+                                                    </div>
 
-                                                {renderContent(item)}
-                                            </CardContent>
-                                        </ArchiveCard>
-                                    </Grid>
-                                ))}
+                                                    <Collapse in={isExpanded} collapsedSize={120}>
+                                                        {renderContent(item)}
+                                                    </Collapse>
+                                                </CardContent>
+
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'flex-end',
+                                                    padding: '8px 16px 16px'
+                                                }}>
+                                                    <ExpandButton onClick={() => toggleExpand(item.id)}>
+                                                        {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                                                    </ExpandButton>
+                                                </div>
+                                            </ArchiveCard>
+                                        </Grid>
+                                    );
+                                })}
                             </Grid>
 
                             <Pagination
